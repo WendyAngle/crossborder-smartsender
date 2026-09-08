@@ -186,9 +186,11 @@ function TasksPage() {
   const [selected, setSelected] = useState<string[]>([]);
   const [templateId, setTemplateId] = useState(templates[0]?.id ?? "");
 
-  // 已成功发送或正在发送中的目标不可重复选择
+  // 已送达或正在发送中的目标不可重复选择；已发送（无回执）与送达失败可再次触达
   const busyIds = new Set(
-    records.filter((r) => r.status !== "failed").map((r) => r.targetId),
+    records
+      .filter((r) => r.status === "delivered" || r.status === "sending")
+      .map((r) => r.targetId),
   );
   const available = targets.filter((t) => !busyIds.has(t.id));
 

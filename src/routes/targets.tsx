@@ -2,7 +2,14 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { AppShell, Drawer, StatCard } from "@/components/app-shell";
 import { Pagination, usePagination } from "@/components/pagination";
-import { isValidPhone, useSmsStore, type Target } from "@/lib/sms-store";
+import {
+  REACH_LABEL,
+  formatTime,
+  isValidPhone,
+  useSmsStore,
+  type ReachStatus,
+  type Target,
+} from "@/lib/sms-store";
 
 export const Route = createFileRoute("/targets")({
   head: () => ({
@@ -22,12 +29,61 @@ export const Route = createFileRoute("/targets")({
   component: TargetsPage,
 });
 
+const REACH_STYLE: Record<ReachStatus, { pill: string; dot: string }> = {
+  untouched: { pill: "bg-muted text-muted-foreground", dot: "bg-muted-foreground/40" },
+  sending: { pill: "bg-warning-soft text-warning-foreground", dot: "bg-warning" },
+  sent: { pill: "bg-muted text-foreground", dot: "bg-foreground/40" },
+  delivered: { pill: "bg-accent text-accent-foreground", dot: "bg-primary" },
+  failed: { pill: "bg-destructive-soft text-destructive", dot: "bg-destructive" },
+};
+
+function ReachCell({
+  status,
+  lastAt,
+  failReason,
+  count,
+  replied,
+}: {
+  status: ReachStatus;
+  lastAt: string | null;
+  failReason: string | null;
+  count: number;
+  replied: boolean;
+}) {
+  const style = REACH_STYLE[status];
+  return (
+    <span className="group relative inline-flex cursor-default items-center gap-1.5">
+      <span
+        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${style.pill}`}
+      >
+        <span className={`size-1.5 rounded-full ${style.dot}`} />
+        {REACH_LABEL[status]}
+      </span>
+      {replied && (
+        <span className="rounded bg-primary/15 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+          已回复
+        </span>
+      )}
+      <span className="pointer-events-none absolute bottom-full left-0 z-20 mb-2 hidden w-60 rounded-xl bg-ink p-3 text-left text-[11px] leading-snug text-ink-foreground/90 shadow-lg group-hover:block">
+        <span className="block">累计发送 {count} 条</span>
+        <span className="mt-1 block">最近发送：{formatTime(lastAt) ?? "—"}</span>
+        {status === "sent" && (
+          <span className="mt-1 block text-ink-foreground/60">已提交运营商，暂未收到送达回执</span>
+        )}
+        {failReason && <span className="mt-1 block text-destructive">失败原因：{failReason}</span>}
+        {count === 0 && <span className="mt-1 block text-ink-foreground/60">尚未向该目标发送短信</span>}
+      </span>
+    </span>
+  );
+}
+
 type Mode = { kind: "none" } | { kind: "single"; target?: Target | undefined } | { kind: "import" };
 
 function TargetsPage() {
-  const { targets, addTarget, updateTarget, removeTarget, importTargets } = useSmsStore();
+  const { targets, addTarget, updateTarget, removeTarget, importTargets, reachOf } = useSmsStore();
   const [mode, setMode] = useState<Mode>({ kind: "none" });
   const [query, setQuery] = useState("");
+  const [reachFilter, setReachFilter] = useState<"all" | ReachStatus | "no-reply">("all");
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -37,13 +93,23 @@ function TargetsPage() {
   const [formError, setFormError] = useState("");
   const [importInfo, setImportInfo] = useState("");
 
+  const rows = useMemo(
+    () => targets.map((t) => ({ target: t, reach: reachOf(t.id) })),
+    [targets, reachOf],
+  );
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return targets;
-    return targets.filter((t) =>
-      [t.name, t.phone, t.region].some((v) => v.toLowerCase().includes(q)),
-    );
-  }, [targets, query]);
+    return rows.filter(({ target: t, reach }) => {
+      if (reachFilter === "no-reply") {
+        if (reach.status === "untouched" || reach.replied) return false;
+      } else if (reachFilter !== "all" && reach.status !== reachFilter) {
+        return false;
+      }
+      if (!q) return true;
+      return [t.name, t.phone, t.region].some((v) => v.toLowerCase().includes(q));
+    });
+  }, [rows, query, reachFilter]);
 
   const { pageItems, props: pageProps } = usePagination(filtered);
 
@@ -60,6 +126,8 @@ function TargetsPage() {
   }, [bulk]);
 
   const regions = new Set(targets.map((t) => t.region)).size;
+  const untouched = rows.filter((r) => r.reach.status === "untouched").length;
+  const deliveredCount = rows.filter((r) => r.reach.status === "delivered").length;
 
   function openSingle(target?: Target) {
     setName(target?.name ?? "");
@@ -267,21 +335,42 @@ function TargetsPage() {
       <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard label="目标总数" value={targets.length.toLocaleString()} />
         <StatCard label="覆盖地区" value={String(regions)} tone="primary" />
-        <StatCard label="当前筛选" value={String(filtered.length)} />
-        <StatCard label="可发送" value={targets.length.toLocaleString()} />
+        <StatCard label="未触达" value={String(untouched)} />
+        <StatCard label="已送达" value={String(deliveredCount)} />
       </div>
 
       <section className="panel overflow-hidden">
         <div className="flex flex-wrap items-center gap-3 border-b border-border px-5 py-4">
           <h2 className="font-display text-[15px] font-semibold">目标名单</h2>
-          <span className="text-xs text-muted-foreground">共 {targets.length} 条</span>
+          <span className="text-xs text-muted-foreground">
+            共 {targets.length} 条 · 当前筛选 {filtered.length} 条
+          </span>
           <div className="ml-auto flex items-center gap-2">
             <input
               className="field w-52 py-1.5 text-xs"
               placeholder="搜索姓名 / 手机号 / 地区"
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                pageProps.onPage(1);
+              }}
             />
+            <select
+              className="field w-28 py-1.5 text-xs"
+              value={reachFilter}
+              onChange={(e) => {
+                setReachFilter(e.target.value as "all" | ReachStatus | "no-reply");
+                pageProps.onPage(1);
+              }}
+            >
+              <option value="all">全部状态</option>
+              <option value="untouched">未触达</option>
+              <option value="sending">发送中</option>
+              <option value="sent">已发送</option>
+              <option value="delivered">已送达</option>
+              <option value="failed">送达失败</option>
+              <option value="no-reply">已触达未回复</option>
+            </select>
             <button
               className="btn-ghost px-3 py-1.5 text-xs"
               onClick={() => setMode({ kind: "import" })}
@@ -300,15 +389,25 @@ function TargetsPage() {
               <th className="px-5 py-3 font-medium">姓名</th>
               <th className="px-3 py-3 font-medium">手机号</th>
               <th className="px-3 py-3 font-medium">国家 / 地区</th>
+              <th className="px-3 py-3 font-medium">触达状态</th>
               <th className="px-5 py-3 text-right font-medium">操作</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {pageItems.map((t) => (
+            {pageItems.map(({ target: t, reach }) => (
               <tr key={t.id} className="transition-colors hover:bg-background/70">
                 <td className="px-5 py-3 font-medium">{t.name}</td>
                 <td className="px-3 py-3 tabular-nums text-muted-foreground">{t.phone}</td>
                 <td className="px-3 py-3 text-muted-foreground">{t.region}</td>
+                <td className="px-3 py-3">
+                  <ReachCell
+                    status={reach.status}
+                    lastAt={reach.lastAt}
+                    failReason={reach.failReason}
+                    count={reach.count}
+                    replied={reach.replied}
+                  />
+                </td>
                 <td className="px-5 py-3 text-right">
                   <div className="inline-flex gap-2">
                     <button className="btn-ghost px-3 py-1.5 text-xs" onClick={() => openSingle(t)}>
@@ -326,8 +425,8 @@ function TargetsPage() {
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={4} className="px-5 py-12 text-center text-sm text-muted-foreground">
-                  暂无目标，先新增或批量导入名单
+                <td colSpan={5} className="px-5 py-12 text-center text-sm text-muted-foreground">
+                  暂无匹配的目标，可调整筛选或新增/批量导入名单
                 </td>
               </tr>
             )}

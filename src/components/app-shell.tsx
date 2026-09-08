@@ -21,7 +21,7 @@ export function AppShell({
   drawer?: ReactNode | undefined;
 }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const { templates, records } = useSmsStore();
+  const { records } = useSmsStore();
   const usedCredits = records.reduce((sum, r) => sum + (r.status === "failed" ? 0 : r.credits), 0);
   const balance = 12480;
 
@@ -56,11 +56,6 @@ export function AppShell({
                   className={`size-1.5 rounded-full ${active ? "bg-primary" : "bg-ink-foreground/30"}`}
                 />
                 {item.label}
-                {item.to === "/templates" && (
-                  <span className="ml-auto rounded bg-primary/20 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
-                    {templates.length}
-                  </span>
-                )}
               </Link>
             );
           })}

@@ -29,6 +29,7 @@ export const Route = createFileRoute("/")({
 
 const STATUS_LABEL: Record<SmsStatus, string> = {
   sending: "发送中",
+  sent: "已发送",
   delivered: "已送达",
   failed: "失败",
 };
@@ -37,11 +38,19 @@ function StatusPill({ status }: { status: SmsStatus }) {
   const cls =
     status === "delivered"
       ? "bg-accent text-accent-foreground"
-      : status === "sending"
-        ? "bg-warning-soft text-warning-foreground"
-        : "bg-destructive-soft text-destructive";
+      : status === "sent"
+        ? "bg-muted text-foreground"
+        : status === "sending"
+          ? "bg-warning-soft text-warning-foreground"
+          : "bg-destructive-soft text-destructive";
   const dot =
-    status === "delivered" ? "bg-primary" : status === "sending" ? "bg-warning" : "bg-destructive";
+    status === "delivered"
+      ? "bg-primary"
+      : status === "sent"
+        ? "bg-foreground/40"
+        : status === "sending"
+          ? "bg-warning"
+          : "bg-destructive";
   return (
     <span
       className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${cls}`}
@@ -244,6 +253,7 @@ function DetailsPage() {
             >
               <option value="all">全部状态</option>
               <option value="delivered">已送达</option>
+              <option value="sent">已发送</option>
               <option value="sending">发送中</option>
               <option value="failed">失败</option>
             </select>

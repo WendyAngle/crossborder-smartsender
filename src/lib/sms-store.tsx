@@ -29,7 +29,24 @@ export type Task = {
   createdAt: string;
 };
 
-export type SmsStatus = "sending" | "delivered" | "failed";
+/**
+ * sending  = 提交网关中
+ * sent     = 已发送（网关提交成功，未收到运营商送达回执）
+ * delivered= 已送达（收到终端送达回执）
+ * failed   = 发送/送达失败
+ */
+export type SmsStatus = "sending" | "sent" | "delivered" | "failed";
+
+/** 目标维度的最近触达状态，由短信明细推导，不作为目标的静态字段存储 */
+export type ReachStatus = "untouched" | "sending" | "sent" | "delivered" | "failed";
+
+export type Reach = {
+  status: ReachStatus;
+  lastAt: string | null;
+  failReason: string | null;
+  replied: boolean;
+  count: number;
+};
 
 /** campaign = 任务群发首条；reply = 我方针对客户回复的人工跟进（同一会话内的新一条短信） */
 export type SmsKind = "campaign" | "reply";
@@ -297,6 +314,58 @@ const initialRecords: SmsRecord[] = [
     replyZh: null,
     replyAt: ts(44),
   },
+  {
+    id: "r7",
+    targetId: "t7",
+    threadId: "th7",
+    kind: "campaign",
+    seq: 1,
+    status: "sent",
+    content:
+      "[AirHui] Marie, -30 € sur votre première commande. Ligne directe AirMax en édition limitée : airhui.shop",
+    contentZh: "【信汇】Marie，首单立减 30 元，AirMax 跨境直邮专线限时开启，点击 airhui.shop 抢购 →",
+    credits: 12,
+    createdAt: ts(42),
+    succeededAt: null,
+    failReason: null,
+    reply: null,
+    replyZh: null,
+    replyAt: null,
+  },
+  {
+    id: "r8",
+    targetId: "t12",
+    threadId: "th8",
+    kind: "campaign",
+    seq: 1,
+    status: "sent",
+    content: "[AirHui] Olivia, 50% off cross-border direct shipping, limited time. Details: airhui.shop/promo",
+    contentZh: "【信汇】Olivia，跨境直邮 5 折限时开启，详情见 airhui.shop/promo",
+    credits: 15,
+    createdAt: ts(36),
+    succeededAt: null,
+    failReason: null,
+    reply: null,
+    replyZh: null,
+    replyAt: null,
+  },
+  {
+    id: "r9",
+    targetId: "t11",
+    threadId: "th9",
+    kind: "campaign",
+    seq: 1,
+    status: "failed",
+    content: "[AirHui] Raj, the AirMax line you follow is back in stock. Check availability: airhui.shop",
+    contentZh: "【信汇】Raj，您关注的 AirMax 跨境直邮专线已到货，前往 airhui.shop 查看库存。",
+    credits: 12,
+    createdAt: ts(30),
+    succeededAt: null,
+    failReason: "当地运营商拦截（空号或停机）",
+    reply: null,
+    replyZh: null,
+    replyAt: null,
+  },
 ];
 
 type State = {
@@ -317,6 +386,8 @@ type Store = State & {
   createTask: (input: { name: string; targetIds: string[]; templateId: string }) => void;
   sendReply: (recordId: string, text: string) => void;
   threadRecords: (threadId: string) => SmsRecord[];
+  /** 由短信明细推导的目标最近触达状态 */
+  reachOf: (targetId: string) => Reach;
   targetById: (id: string) => Target | undefined;
   templateById: (id: string) => Template | undefined;
 };
@@ -324,7 +395,33 @@ type Store = State & {
 export type ImportResult = { added: number; invalid: number; duplicated: number };
 
 const StoreContext = createContext<Store | null>(null);
-const KEY = "sms-console-state-v3";
+const KEY = "sms-console-state-v4";
+
+export const REACH_LABEL: Record<ReachStatus, string> = {
+  untouched: "未触达",
+  sending: "发送中",
+  sent: "已发送",
+  delivered: "已送达",
+  failed: "送达失败",
+};
+
+/** 取该目标最近一条外发短信的状态作为触达状态 */
+export function computeReach(targetId: string, records: SmsRecord[]): Reach {
+  const mine = records
+    .filter((r) => r.targetId === targetId)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const last = mine[0];
+  if (!last) {
+    return { status: "untouched", lastAt: null, failReason: null, replied: false, count: 0 };
+  }
+  return {
+    status: last.status,
+    lastAt: last.createdAt,
+    failReason: last.failReason,
+    replied: mine.some((r) => !!r.reply),
+    count: mine.length,
+  };
+}
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 
@@ -492,6 +589,7 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
       sendReply,
       threadRecords: (threadId) =>
         state.records.filter((r) => r.threadId === threadId).sort((a, b) => a.seq - b.seq),
+      reachOf: (targetId) => computeReach(targetId, state.records),
       targetById: (id) => state.targets.find((t) => t.id === id),
       templateById: (id) => state.templates.find((t) => t.id === id),
     }),
