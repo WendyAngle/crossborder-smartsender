@@ -99,8 +99,11 @@ export function countCredits(content: string) {
   return Math.max(1, Math.ceil(len / 70)) * 12;
 }
 
+// 固定基准时间，避免服务端与浏览器渲染出不同的示例时间
+const MOCK_BASE = Date.parse("2026-09-08T09:00:00Z");
+
 function ts(offsetMinutes: number) {
-  return new Date(Date.now() - offsetMinutes * 60_000).toISOString();
+  return new Date(MOCK_BASE - offsetMinutes * 60_000).toISOString();
 }
 
 export function formatTime(value: string | null) {
