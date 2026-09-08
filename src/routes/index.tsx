@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState, type ReactNode } from "react";
 import { AppShell, Drawer, StatCard } from "@/components/app-shell";
 import { Pagination, usePagination } from "@/components/pagination";
-import { MsgTypePill, PosterThumb, SmsPoster } from "@/components/sms-image";
+import { MsgTypePill, SmsPoster } from "@/components/sms-image";
 import {
   formatTime,
   useSmsStore,
