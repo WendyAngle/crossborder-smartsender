@@ -94,6 +94,7 @@ function TargetsPage() {
     if (rows.length === 0) return;
     importTargets(rows);
     setBulk("");
+    setFileName("");
     setMode({ kind: "none" });
   }
 
