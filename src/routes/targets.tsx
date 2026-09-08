@@ -21,7 +21,7 @@ export const Route = createFileRoute("/targets")({
   component: TargetsPage,
 });
 
-type Mode = { kind: "none" } | { kind: "single"; target?: Target } | { kind: "import" };
+type Mode = { kind: "none" } | { kind: "single"; target?: Target | undefined } | { kind: "import" };
 
 function TargetsPage() {
   const { targets, addTarget, updateTarget, removeTarget, importTargets } = useSmsStore();
@@ -63,7 +63,7 @@ function TargetsPage() {
       .split("\n")
       .map((line) => line.split(/[,\t，]/).map((c) => c.trim()))
       .filter((cols) => cols[0] && cols[1])
-      .map((cols) => ({ name: cols[0], phone: cols[1], region: cols[2] || "未填写" }));
+      .map((cols) => ({ name: cols[0]!, phone: cols[1]!, region: cols[2] || "未填写" }));
     if (rows.length === 0) return;
     importTargets(rows);
     setBulk("");

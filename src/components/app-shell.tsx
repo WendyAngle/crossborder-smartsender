@@ -18,7 +18,7 @@ export function AppShell({
   title: string;
   subtitle: string;
   children: ReactNode;
-  drawer?: ReactNode;
+  drawer?: ReactNode | undefined;
 }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { templates, records } = useSmsStore();
@@ -112,7 +112,7 @@ export function Drawer({
   children,
 }: {
   title: string;
-  hint?: string;
+  hint?: string | undefined;
   onClose: () => void;
   footer: ReactNode;
   children: ReactNode;
@@ -142,7 +142,7 @@ export function StatCard({
 }: {
   label: string;
   value: string;
-  tone?: "primary" | "danger";
+  tone?: "primary" | "danger" | undefined;
 }) {
   return (
     <div className="panel px-4 py-3.5">
