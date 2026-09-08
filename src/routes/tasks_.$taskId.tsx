@@ -6,7 +6,7 @@ import { ReachCell } from "@/components/reach";
 import { MsgTypePill } from "@/components/sms-image";
 import { REACH_LABEL, formatTime, useSmsStore, type ReachStatus } from "@/lib/sms-store";
 
-export const Route = createFileRoute("/tasks/$taskId")({
+export const Route = createFileRoute("/tasks_/$taskId")({
   head: () => ({
     meta: [
       { title: "任务目标明细 · 短信营销管理系统" },
