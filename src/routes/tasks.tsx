@@ -28,11 +28,17 @@ export const Route = createFileRoute("/tasks")({
 });
 
 function TasksPage() {
-  const { tasks, targets, templates, createTask, templateById } = useSmsStore();
+  const { tasks, targets, templates, records, createTask, templateById } = useSmsStore();
   const [open, setOpen] = useState(false);
   const [taskName, setTaskName] = useState(autoTaskName());
   const [selected, setSelected] = useState<string[]>([]);
   const [templateId, setTemplateId] = useState(templates[0]?.id ?? "");
+
+  // 已成功发送或正在发送中的目标不可重复选择
+  const busyIds = new Set(
+    records.filter((r) => r.status !== "failed").map((r) => r.targetId),
+  );
+  const available = targets.filter((t) => !busyIds.has(t.id));
 
   const template = templateById(templateId);
   const previewTarget = targets.find((t) => t.id === selected[0]);
@@ -91,29 +97,53 @@ function TasksPage() {
             </div>
 
             <div>
-              <label className="text-xs font-medium text-muted-foreground">
-                选择目标（已选 {selected.length}）
-              </label>
-              <div className="mt-1.5 flex flex-wrap gap-2">
-                {targets.map((t) => {
+              <div className="flex items-baseline justify-between">
+                <label className="text-xs font-medium text-muted-foreground">
+                  选择目标（已选 {selected.length} / 可选 {available.length}）
+                </label>
+                {available.length > 0 && (
+                  <button
+                    className="text-[11px] font-medium text-primary hover:underline"
+                    onClick={() =>
+                      setSelected((s) =>
+                        s.length === available.length ? [] : available.map((t) => t.id),
+                      )
+                    }
+                  >
+                    {selected.length === available.length ? "取消全选" : "全选"}
+                  </button>
+                )}
+              </div>
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                已成功发送与发送中的目标已自动过滤
+              </p>
+              <div className="mt-1.5 max-h-56 space-y-1 overflow-y-auto rounded-xl border border-border p-1.5">
+                {available.map((t) => {
                   const on = selected.includes(t.id);
                   return (
-                    <button
+                    <label
                       key={t.id}
-                      onClick={() => toggle(t.id)}
-                      className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${
-                        on
-                          ? "bg-ink text-ink-foreground"
-                          : "border border-border text-muted-foreground hover:bg-background"
+                      className={`flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs transition-colors ${
+                        on ? "bg-primary/10" : "hover:bg-background"
                       }`}
                     >
-                      {t.name}
-                      <span className={on ? "text-ink-foreground/50" : "text-muted-foreground"}>
-                        {t.region}
-                      </span>
-                    </button>
+                      <input
+                        type="checkbox"
+                        checked={on}
+                        onChange={() => toggle(t.id)}
+                        className="h-3.5 w-3.5 accent-primary"
+                      />
+                      <span className="font-medium">{t.name}</span>
+                      <span className="tabular-nums text-muted-foreground">{t.phone}</span>
+                      <span className="ml-auto text-muted-foreground">{t.region}</span>
+                    </label>
                   );
                 })}
+                {available.length === 0 && (
+                  <p className="px-2.5 py-6 text-center text-xs text-muted-foreground">
+                    暂无可选目标，全部目标均已发送或发送中
+                  </p>
+                )}
               </div>
             </div>
 
