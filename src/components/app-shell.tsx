@@ -1,6 +1,51 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import type { ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useSmsStore } from "@/lib/sms-store";
+
+function AccountMenu() {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function onDoc(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, []);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-background"
+      >
+        <div className="grid size-8 place-items-center rounded-full bg-accent font-display text-sm font-semibold text-accent-foreground">
+          李
+        </div>
+        <span className="text-sm font-medium">李经理</span>
+        <span className="text-[10px] text-muted-foreground">▾</span>
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full z-20 mt-2 w-44 overflow-hidden rounded-xl border border-border bg-card py-1 shadow-xl">
+          <Link
+            to="/profile"
+            onClick={() => setOpen(false)}
+            className="block px-4 py-2.5 text-sm hover:bg-background"
+          >
+            个人资料
+          </Link>
+          <button
+            onClick={() => setOpen(false)}
+            className="block w-full px-4 py-2.5 text-left text-sm text-destructive hover:bg-background"
+          >
+            退出登录
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 const NAV = [
   { to: "/targets", label: "目标管理" },
@@ -81,11 +126,8 @@ export function AppShell({
           <h1 className="font-display text-lg font-semibold tracking-tight">{title}</h1>
           <span className="text-xs text-muted-foreground">{subtitle}</span>
           <div className="ml-auto flex items-center gap-3">
-            <div className="flex items-center gap-2 border-l border-border pl-3">
-              <div className="grid size-8 place-items-center rounded-full bg-accent font-display text-sm font-semibold text-accent-foreground">
-                李
-              </div>
-              <span className="text-sm font-medium">李经理</span>
+            <div className="border-l border-border pl-3">
+              <AccountMenu />
             </div>
           </div>
         </header>
