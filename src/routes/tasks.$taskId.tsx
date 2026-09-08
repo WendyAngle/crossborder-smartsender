@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { AppShell, StatCard } from "@/components/app-shell";
 import { Pagination, usePagination } from "@/components/pagination";
 import { ReachCell } from "@/components/reach";
+import { MsgTypePill } from "@/components/sms-image";
 import { REACH_LABEL, formatTime, useSmsStore, type ReachStatus } from "@/lib/sms-store";
 
 export const Route = createFileRoute("/tasks/$taskId")({
@@ -77,6 +78,9 @@ function TaskTargetsPage() {
           ← 返回任务列表
         </Link>
         <span>发信模板：{template?.name ?? "已删除模板"}</span>
+        <span className="inline-flex items-center gap-1.5">
+          内容类型：<MsgTypePill type={task.msgType ?? "text"} />
+        </span>
         <span className="tabular-nums">创建时间：{formatTime(task.createdAt)}</span>
       </div>
 

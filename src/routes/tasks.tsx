@@ -2,12 +2,15 @@ import { Link, createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { AppShell, Drawer, StatCard } from "@/components/app-shell";
 import { Pagination, usePagination } from "@/components/pagination";
+import { MsgTypePill, SmsPoster } from "@/components/sms-image";
 import {
   autoTaskName,
+  IMAGE_SURCHARGE,
   countCredits,
   formatTime,
   renderTemplate,
   useSmsStore,
+  type MsgType,
   type Target,
 } from "@/lib/sms-store";
 
@@ -185,6 +188,7 @@ function TasksPage() {
   const [taskName, setTaskName] = useState(autoTaskName());
   const [selected, setSelected] = useState<string[]>([]);
   const [templateId, setTemplateId] = useState(templates[0]?.id ?? "");
+  const [msgType, setMsgType] = useState<MsgType>("text");
 
   // 已送达或正在发送中的目标不可重复选择；已发送（无回执）与送达失败可再次触达
   const busyIds = new Set(
@@ -204,13 +208,14 @@ function TasksPage() {
     setTaskName(autoTaskName());
     setSelected([]);
     setTemplateId(templates[0]?.id ?? "");
+    setMsgType("text");
     setOpen(true);
   }
 
 
   function submit() {
     if (!taskName.trim() || selected.length === 0 || !templateId) return;
-    createTask({ name: taskName.trim(), targetIds: selected, templateId });
+    createTask({ name: taskName.trim(), targetIds: selected, templateId, msgType });
     setOpen(false);
   }
 
@@ -277,7 +282,41 @@ function TasksPage() {
             </div>
 
             <div>
-              <label className="text-xs font-medium text-muted-foreground">内容预览</label>
+              <label className="text-xs font-medium text-muted-foreground">发信内容类型</label>
+              <div className="mt-1.5 grid grid-cols-2 gap-2">
+                {(["text", "image"] as MsgType[]).map((v) => (
+                  <label
+                    key={v}
+                    className={`flex cursor-pointer items-start gap-2 rounded-xl border px-3 py-2.5 text-xs transition-colors ${
+                      msgType === v
+                        ? "border-primary bg-primary/10"
+                        : "border-border hover:bg-background"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="msgType"
+                      className="mt-0.5 h-3.5 w-3.5 accent-primary"
+                      checked={msgType === v}
+                      onChange={() => setMsgType(v)}
+                    />
+                    <span>
+                      <span className="block font-medium">{v === "text" ? "文本" : "图片"}</span>
+                      <span className="mt-0.5 block text-[11px] leading-snug text-muted-foreground">
+                        {v === "text"
+                          ? "普通文本短信，按字符计费"
+                          : `将模板内容自动生成营销图片下发，每条加收 ${IMAGE_SURCHARGE} 积分`}
+                      </span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">
+                内容预览 · {msgType === "text" ? "文本" : "图片"}
+              </label>
               <div className="mt-1.5 rounded-xl bg-background p-3">
                 <div className="mb-2 flex items-center justify-between text-[10px] text-muted-foreground">
                   <span>信汇 · 预览机</span>
@@ -288,12 +327,22 @@ function TasksPage() {
                     })}
                   </span>
                 </div>
-                <div className="max-w-[85%] rounded-2xl rounded-tl-sm bg-card px-3.5 py-2.5 text-[13px] leading-relaxed text-foreground/80 shadow-[0_0_0_1px_color-mix(in_oklab,black_5%,transparent)]">
-                  {preview}
-                </div>
+                {msgType === "text" ? (
+                  <div className="max-w-[85%] rounded-2xl rounded-tl-sm bg-card px-3.5 py-2.5 text-[13px] leading-relaxed text-foreground/80 shadow-[0_0_0_1px_color-mix(in_oklab,black_5%,transparent)]">
+                    {preview}
+                  </div>
+                ) : (
+                  <div className="max-w-[75%]">
+                    <SmsPoster content={preview} size="md" />
+                    <div className="mt-1 text-[10px] text-muted-foreground">
+                      图片由上方模板内容自动生成，变量已按目标替换
+                    </div>
+                  </div>
+                )}
                 <div className="mt-2 text-right text-[10px] text-muted-foreground">
                   {selected.length || 0} 个目标 ·{" "}
-                  {template ? countCredits(template.content) * (selected.length || 0) : 0} 积分
+                  {template ? countCredits(template.content, msgType) * (selected.length || 0) : 0}{" "}
+                  积分
                 </div>
               </div>
             </div>
@@ -325,6 +374,7 @@ function TasksPage() {
               <th className="px-5 py-3 font-medium">任务名称</th>
               <th className="px-3 py-3 font-medium">目标数</th>
               <th className="px-3 py-3 font-medium">发信模板</th>
+              <th className="px-3 py-3 font-medium">内容类型</th>
               <th className="px-3 py-3 font-medium">预计积分</th>
               <th className="px-5 py-3 font-medium">创建时间</th>
             </tr>
@@ -345,8 +395,11 @@ function TasksPage() {
                     </Link>
                   </td>
                   <td className="px-3 py-3 text-muted-foreground">{tpl?.name ?? "已删除模板"}</td>
+                  <td className="px-3 py-3">
+                    <MsgTypePill type={task.msgType ?? "text"} />
+                  </td>
                   <td className="px-3 py-3 tabular-nums text-muted-foreground">
-                    {tpl ? countCredits(tpl.content) * task.targetIds.length : 0}
+                    {tpl ? countCredits(tpl.content, task.msgType ?? "text") * task.targetIds.length : 0}
                   </td>
                   <td className="whitespace-nowrap px-5 py-3 text-xs tabular-nums text-muted-foreground">
                     {formatTime(task.createdAt)}
@@ -356,7 +409,7 @@ function TasksPage() {
             })}
             {tasks.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-5 py-12 text-center text-sm text-muted-foreground">
+                <td colSpan={6} className="px-5 py-12 text-center text-sm text-muted-foreground">
                   暂无任务，点击「新建任务」开始发信
                 </td>
               </tr>
