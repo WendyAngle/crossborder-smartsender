@@ -31,16 +31,31 @@ export type Task = {
 
 export type SmsStatus = "sending" | "delivered" | "failed";
 
+/** campaign = 任务群发首条；reply = 我方针对客户回复的人工跟进（同一会话内的新一条短信） */
+export type SmsKind = "campaign" | "reply";
+
 export type SmsRecord = {
   id: string;
   targetId: string;
+  /** 同一目标的一次对话，群发首条与后续人工回复共用同一个 threadId */
+  threadId: string;
+  kind: SmsKind;
+  /** 会话内序号，从 1 开始 */
+  seq: number;
   status: SmsStatus;
+  /** 实际发送内容（目标所在国家/地区语言） */
   content: string;
+  /** 中文译文，仅当发送内容非中文时提供 */
+  contentZh: string | null;
   credits: number;
   createdAt: string;
   succeededAt: string | null;
   failReason: string | null;
+  /** 对方回复原文 */
   reply: string | null;
+  /** 对方回复中文译文 */
+  replyZh: string | null;
+  replyAt: string | null;
 };
 
 export const VARIABLES = [
