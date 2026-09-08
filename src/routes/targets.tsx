@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { AppShell, Drawer, StatCard } from "@/components/app-shell";
 import { Pagination, usePagination } from "@/components/pagination";
-import { useSmsStore, type Target } from "@/lib/sms-store";
+import { isValidPhone, useSmsStore, type Target } from "@/lib/sms-store";
 
 export const Route = createFileRoute("/targets")({
   head: () => ({
@@ -34,6 +34,8 @@ function TargetsPage() {
   const [region, setRegion] = useState("");
   const [bulk, setBulk] = useState("");
   const [fileName, setFileName] = useState("");
+  const [formError, setFormError] = useState("");
+  const [importInfo, setImportInfo] = useState("");
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -45,20 +47,47 @@ function TargetsPage() {
 
   const { pageItems, props: pageProps } = usePagination(filtered);
 
+  const bulkStats = useMemo(() => {
+    let valid = 0;
+    let invalid = 0;
+    for (const line of bulk.split("\n")) {
+      const cols = line.split(/[,\t，]/).map((c) => c.trim());
+      if (!cols[0] || !cols[1]) continue;
+      if (isValidPhone(cols[1])) valid += 1;
+      else invalid += 1;
+    }
+    return { valid, invalid };
+  }, [bulk]);
+
   const regions = new Set(targets.map((t) => t.region)).size;
 
   function openSingle(target?: Target) {
     setName(target?.name ?? "");
     setPhone(target?.phone ?? "");
     setRegion(target?.region ?? "");
+    setFormError("");
     setMode({ kind: "single", target });
   }
 
   function saveSingle() {
-    if (!name.trim() || !phone.trim()) return;
+    if (!name.trim()) {
+      setFormError("请填写姓名");
+      return;
+    }
+    if (!isValidPhone(phone)) {
+      setFormError("手机号格式不正确，请填写带国际区号的号码（7-15 位数字）");
+      return;
+    }
     const payload = { name: name.trim(), phone: phone.trim(), region: region.trim() || "未填写" };
-    if (mode.kind === "single" && mode.target) updateTarget(mode.target.id, payload);
-    else addTarget(payload);
+    const ok =
+      mode.kind === "single" && mode.target
+        ? updateTarget(mode.target.id, payload)
+        : addTarget(payload);
+    if (!ok) {
+      setFormError("数据格式不正确，未保存");
+      return;
+    }
+    setFormError("");
     setMode({ kind: "none" });
   }
 
@@ -94,8 +123,19 @@ function TargetsPage() {
       .map((line) => line.split(/[,\t，]/).map((c) => c.trim()))
       .filter((cols) => cols[0] && cols[1])
       .map((cols) => ({ name: cols[0]!, phone: cols[1]!, region: cols[2] || "未填写" }));
-    if (rows.length === 0) return;
-    importTargets(rows);
+    if (rows.length === 0) {
+      setImportInfo("没有可导入的数据");
+      return;
+    }
+    const res = importTargets(rows);
+    const parts = [`成功导入 ${res.added} 条`];
+    if (res.invalid) parts.push(`过滤格式无效 ${res.invalid} 条`);
+    if (res.duplicated) parts.push(`跳过重复号码 ${res.duplicated} 条`);
+    if (res.added === 0) {
+      setImportInfo(parts.join("，"));
+      return;
+    }
+    setImportInfo("");
     setBulk("");
     setFileName("");
     setMode({ kind: "none" });
@@ -146,6 +186,11 @@ function TargetsPage() {
                 placeholder="美国"
               />
             </div>
+            {formError && (
+              <p className="rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                {formError}
+              </p>
+            )}
           </Drawer>
         ) : mode.kind === "import" ? (
           <Drawer
@@ -206,11 +251,15 @@ function TargetsPage() {
                 placeholder={"Sophia Miller, +1 305 555 0182, 美国\nCarlos Mendez, +34 600 555 019, 西班牙"}
               />
               <p className="mt-2 text-[11px] text-muted-foreground">
-                支持逗号、制表符分隔，可直接从表格复制粘贴。已识别{" "}
-                {bulk.split("\n").filter((l) => l.split(/[,\t，]/).filter((c) => c.trim()).length >= 2).length}{" "}
-                条有效数据。
+                支持逗号、制表符分隔，可直接从表格复制粘贴。已识别 {bulkStats.valid} 条有效数据
+                {bulkStats.invalid > 0 ? `，${bulkStats.invalid} 条手机号格式无效将被自动过滤` : ""}。
               </p>
             </div>
+            {importInfo && (
+              <p className="rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                {importInfo}
+              </p>
+            )}
           </Drawer>
         ) : null
       }
