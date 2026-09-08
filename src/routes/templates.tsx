@@ -172,7 +172,7 @@ function TemplatesPage() {
         </div>
 
         <div className="divide-y divide-border">
-          {templates.map((t) => (
+          {pageItems.map((t) => (
             <div key={t.id} className="flex items-start gap-4 px-5 py-4 hover:bg-background/70">
               <div className="min-w-0 flex-1">
                 <div className="font-medium">{t.name}</div>
@@ -210,6 +210,8 @@ function TemplatesPage() {
             </div>
           )}
         </div>
+
+        <Pagination {...pageProps} unit="个" />
       </section>
     </AppShell>
   );
