@@ -2,9 +2,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState, type ReactNode } from "react";
 import { AppShell, Drawer, StatCard } from "@/components/app-shell";
 import { Pagination, usePagination } from "@/components/pagination";
+import { MsgTypePill, PosterThumb, SmsPoster } from "@/components/sms-image";
 import {
   formatTime,
   useSmsStore,
+  type MsgType,
   type SmsRecord,
   type SmsStatus,
 } from "@/lib/sms-store";
@@ -66,11 +68,14 @@ function HoverBubble({
   label,
   original,
   translated,
+  poster = false,
   children,
 }: {
   label: string;
   original: string;
   translated: string | null;
+  /** 图片短信：气泡内展示生成图 */
+  poster?: boolean;
   children: ReactNode;
 }) {
   return (
@@ -80,7 +85,13 @@ function HoverBubble({
         <span className="block text-[10px] uppercase tracking-wide text-ink-foreground/40">
           {label}
         </span>
-        <span className="mt-1 block whitespace-pre-wrap">{original}</span>
+        {poster ? (
+          <span className="mt-1.5 block">
+            <SmsPoster content={original} size="sm" />
+          </span>
+        ) : (
+          <span className="mt-1 block whitespace-pre-wrap">{original}</span>
+        )}
         {translated && (
           <>
             <span className="mt-2 block border-t border-ink-foreground/15 pt-2 text-[10px] uppercase tracking-wide text-ink-foreground/40">
@@ -99,6 +110,7 @@ function DetailsPage() {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | SmsStatus>("all");
   const [replyFilter, setReplyFilter] = useState<"all" | "yes" | "no">("all");
+  const [typeFilter, setTypeFilter] = useState<"all" | MsgType>("all");
   const [replyTo, setReplyTo] = useState<SmsRecord | null>(null);
   const [replyText, setReplyText] = useState("");
 
@@ -106,6 +118,7 @@ function DetailsPage() {
     const q = query.trim().toLowerCase();
     const list = records.filter((r) => {
       if (statusFilter !== "all" && r.status !== statusFilter) return false;
+      if (typeFilter !== "all" && (r.msgType ?? "text") !== typeFilter) return false;
       if (replyFilter === "yes" && !r.reply) return false;
       if (replyFilter === "no" && r.reply) return false;
       if (!q) return true;
@@ -129,7 +142,7 @@ function DetailsPage() {
         a.threadId.localeCompare(b.threadId) ||
         a.seq - b.seq,
     );
-  }, [records, query, statusFilter, replyFilter, targetById]);
+  }, [records, query, statusFilter, replyFilter, typeFilter, targetById]);
 
   const { pageItems, props: pageProps } = usePagination(filtered);
 
@@ -178,10 +191,17 @@ function DetailsPage() {
                   <div key={r.id} className="space-y-2.5">
                     <div className="rounded-xl bg-background p-3">
                       <div className="flex items-center gap-2 text-[10px] uppercase tracking-wide text-muted-foreground">
-                        我方 · 第 {r.seq} 条 · {r.kind === "campaign" ? "任务群发" : "人工回复"}
+                        我方 · 第 {r.seq} 条 · {r.kind === "campaign" ? "任务群发" : "人工回复"} ·{" "}
+                        {(r.msgType ?? "text") === "image" ? "图片" : "文本"}
                         <span className="ml-auto tabular-nums">{formatTime(r.createdAt)}</span>
                       </div>
-                      <div className="mt-1.5 text-[13px] leading-relaxed">{r.content}</div>
+                      {(r.msgType ?? "text") === "image" ? (
+                        <div className="mt-1.5 max-w-[80%]">
+                          <SmsPoster content={r.content} size="sm" />
+                        </div>
+                      ) : (
+                        <div className="mt-1.5 text-[13px] leading-relaxed">{r.content}</div>
+                      )}
                       {r.contentZh && (
                         <div className="mt-1.5 border-t border-border pt-1.5 text-xs text-muted-foreground">
                           译文：{r.contentZh}
@@ -259,6 +279,15 @@ function DetailsPage() {
             </select>
             <select
               className="field w-24 py-1.5 text-xs"
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value as "all" | MsgType)}
+            >
+              <option value="all">全部类型</option>
+              <option value="text">文本</option>
+              <option value="image">图片</option>
+            </select>
+            <select
+              className="field w-24 py-1.5 text-xs"
               value={replyFilter}
               onChange={(e) => setReplyFilter(e.target.value as "all" | "yes" | "no")}
             >
@@ -315,9 +344,24 @@ function DetailsPage() {
                       <StatusPill status={r.status} />
                     </td>
                     <td className="px-3 py-3 text-muted-foreground">
-                      <HoverBubble label="实际发送内容" original={r.content} translated={r.contentZh}>
-                        <span className="block max-w-40 truncate underline decoration-dotted decoration-border underline-offset-4">
-                          {r.content}
+                      <HoverBubble
+                        label={
+                          (r.msgType ?? "text") === "image"
+                            ? "图片短信 · 生成图与文案"
+                            : "实际发送内容"
+                        }
+                        original={r.content}
+                        translated={r.contentZh}
+                        poster={(r.msgType ?? "text") === "image"}
+                      >
+                        <span className="flex items-center gap-2">
+                          {(r.msgType ?? "text") === "image" && <PosterThumb content={r.content} />}
+                          <span className="block">
+                            <MsgTypePill type={r.msgType ?? "text"} />
+                            <span className="mt-0.5 block max-w-40 truncate underline decoration-dotted decoration-border underline-offset-4">
+                              {r.content}
+                            </span>
+                          </span>
                         </span>
                       </HoverBubble>
                     </td>
