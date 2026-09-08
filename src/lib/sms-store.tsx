@@ -210,7 +210,7 @@ type Store = State & {
 };
 
 const StoreContext = createContext<Store | null>(null);
-const KEY = "sms-console-state-v1";
+const KEY = "sms-console-state-v2";
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 
