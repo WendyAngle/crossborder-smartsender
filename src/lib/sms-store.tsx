@@ -487,7 +487,7 @@ type Store = State & {
 export type ImportResult = { added: number; invalid: number; duplicated: number };
 
 const StoreContext = createContext<Store | null>(null);
-const KEY = "sms-console-state-v5";
+const KEY = "sms-console-state-v6";
 
 export const REACH_LABEL: Record<ReachStatus, string> = {
   untouched: "未触达",
