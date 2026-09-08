@@ -202,7 +202,9 @@ function TargetsPage() {
                 placeholder={"Sophia Miller, +1 305 555 0182, 美国\nCarlos Mendez, +34 600 555 019, 西班牙"}
               />
               <p className="mt-2 text-[11px] text-muted-foreground">
-                支持逗号、制表符分隔，可直接从表格复制粘贴。
+                支持逗号、制表符分隔，可直接从表格复制粘贴。已识别{" "}
+                {bulk.split("\n").filter((l) => l.split(/[,\t，]/).filter((c) => c.trim()).length >= 2).length}{" "}
+                条有效数据。
               </p>
             </div>
           </Drawer>
