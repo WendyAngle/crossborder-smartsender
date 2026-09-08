@@ -36,6 +36,7 @@ function TemplatesPage() {
   const areaRef = useRef<HTMLTextAreaElement>(null);
 
   const open = editing !== undefined;
+  const { pageItems, props: pageProps } = usePagination(templates);
 
   function openDrawer(tpl: Template | null) {
     setName(tpl?.name ?? "");

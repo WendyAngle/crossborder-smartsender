@@ -255,7 +255,7 @@ function TargetsPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {filtered.map((t) => (
+            {pageItems.map((t) => (
               <tr key={t.id} className="transition-colors hover:bg-background/70">
                 <td className="px-5 py-3 font-medium">{t.name}</td>
                 <td className="px-3 py-3 tabular-nums text-muted-foreground">{t.phone}</td>
@@ -284,6 +284,8 @@ function TargetsPage() {
             )}
           </tbody>
         </table>
+
+        <Pagination {...pageProps} />
       </section>
     </AppShell>
   );

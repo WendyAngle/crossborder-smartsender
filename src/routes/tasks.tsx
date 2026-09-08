@@ -65,6 +65,7 @@ function TasksPage() {
   }
 
   const totalSent = tasks.reduce((s, t) => s + t.targetIds.length, 0);
+  const { pageItems, props: pageProps } = usePagination(tasks);
 
   return (
     <AppShell
