@@ -28,7 +28,7 @@ export const Route = createFileRoute("/tasks")({
 });
 
 function TasksPage() {
-  const { tasks, targets, templates, createTask, templateById } = useSmsStore();
+  const { tasks, targets, templates, records, createTask, templateById } = useSmsStore();
   const [open, setOpen] = useState(false);
   const [taskName, setTaskName] = useState(autoTaskName());
   const [selected, setSelected] = useState<string[]>([]);
