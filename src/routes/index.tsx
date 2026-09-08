@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState, type ReactNode } from "react";
+import { translateForRegion } from "@/lib/translate.functions";
 import { AppShell, Drawer, StatCard } from "@/components/app-shell";
 import { Pagination, usePagination } from "@/components/pagination";
 import { MsgTypePill, SmsPoster } from "@/components/sms-image";
@@ -113,6 +115,24 @@ function DetailsPage() {
   const [typeFilter, setTypeFilter] = useState<"all" | MsgType>("all");
   const [replyTo, setReplyTo] = useState<SmsRecord | null>(null);
   const [replyText, setReplyText] = useState("");
+  const [translating, setTranslating] = useState(false);
+  const [translateError, setTranslateError] = useState("");
+  const [originalText, setOriginalText] = useState("");
+  const translate = useServerFn(translateForRegion);
+
+  async function doTranslate(text: string, region: string) {
+    setTranslating(true);
+    setTranslateError("");
+    try {
+      const res = await translate({ data: { text: text.trim(), region } });
+      setOriginalText(text.trim());
+      setReplyText(res.translated);
+    } catch (e) {
+      setTranslateError(e instanceof Error ? e.message : "翻译失败，请稍后重试");
+    } finally {
+      setTranslating(false);
+    }
+  }
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -229,13 +249,47 @@ function DetailsPage() {
               </div>
             </div>
             <div>
-              <label className="text-xs font-medium text-muted-foreground">回复内容</label>
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-medium text-muted-foreground">回复内容</label>
+                <button
+                  className="btn-ghost ml-auto px-3 py-1.5 text-xs"
+                  disabled={translating || !replyText.trim()}
+                  onClick={() => {
+                    const region = targetById(replyTo.targetId)?.region ?? "";
+                    void doTranslate(replyText, region);
+                  }}
+                >
+                  {translating ? "翻译中…" : `翻译为${targetById(replyTo.targetId)?.region ?? ""}语言`}
+                </button>
+              </div>
               <textarea
                 className="field mt-1.5 min-h-28 resize-y"
                 value={replyText}
                 onChange={(e) => setReplyText(e.target.value)}
                 placeholder="输入回复内容…"
               />
+              {translateError && (
+                <p className="mt-1.5 rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                  {translateError}
+                </p>
+              )}
+              {originalText && (
+                <div className="mt-1.5 rounded-lg border border-border bg-background/60 p-2.5 text-[11px] text-muted-foreground">
+                  <div className="flex items-center gap-2">
+                    <span>翻译前内容</span>
+                    <button
+                      className="ml-auto underline hover:text-foreground"
+                      onClick={() => {
+                        setReplyText(originalText);
+                        setOriginalText("");
+                      }}
+                    >
+                      撤销翻译
+                    </button>
+                  </div>
+                  <div className="mt-1 whitespace-pre-wrap">{originalText}</div>
+                </div>
+              )}
               <p className="mt-1.5 text-[11px] text-muted-foreground">
                 回复将作为同一会话的第 {thread.length + 1} 条短信独立记账，原记录保持不变。
               </p>
