@@ -352,7 +352,7 @@ function TargetsPage() {
               value={query}
               onChange={(e) => {
                 setQuery(e.target.value);
-                pageProps.onPageChange(1);
+                pageProps.onPage(1);
               }}
             />
             <select
@@ -360,7 +360,7 @@ function TargetsPage() {
               value={reachFilter}
               onChange={(e) => {
                 setReachFilter(e.target.value as "all" | ReachStatus | "no-reply");
-                pageProps.onPageChange(1);
+                pageProps.onPage(1);
               }}
             >
               <option value="all">全部状态</option>
