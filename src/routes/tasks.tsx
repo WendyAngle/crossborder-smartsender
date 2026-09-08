@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { AppShell, Drawer, StatCard } from "@/components/app-shell";
 import { Pagination, usePagination } from "@/components/pagination";
 import {
@@ -8,6 +8,7 @@ import {
   formatTime,
   renderTemplate,
   useSmsStore,
+  type Target,
 } from "@/lib/sms-store";
 
 export const Route = createFileRoute("/tasks")({
