@@ -253,6 +253,7 @@ function DetailsPage() {
             >
               <option value="all">全部状态</option>
               <option value="delivered">已送达</option>
+              <option value="sent">已发送</option>
               <option value="sending">发送中</option>
               <option value="failed">失败</option>
             </select>
