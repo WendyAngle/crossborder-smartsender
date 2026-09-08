@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { AppShell, Drawer, StatCard } from "@/components/app-shell";
 import { Pagination, usePagination } from "@/components/pagination";
@@ -335,8 +335,14 @@ function TasksPage() {
               return (
                 <tr key={task.id} className="transition-colors hover:bg-background/70">
                   <td className="px-5 py-3 font-medium">{task.name}</td>
-                  <td className="px-3 py-3 tabular-nums text-muted-foreground">
-                    {task.targetIds.length}
+                  <td className="px-3 py-3 tabular-nums">
+                    <Link
+                      to="/tasks/$taskId"
+                      params={{ taskId: task.id }}
+                      className="font-medium text-primary hover:underline"
+                    >
+                      {task.targetIds.length}
+                    </Link>
                   </td>
                   <td className="px-3 py-3 text-muted-foreground">{tpl?.name ?? "已删除模板"}</td>
                   <td className="px-3 py-3 tabular-nums text-muted-foreground">
