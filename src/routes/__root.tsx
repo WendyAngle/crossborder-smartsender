@@ -11,7 +11,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import { SmsStoreProvider } from "../lib/sms-store";
+import { SmsStoreProvider } from "@/lib/sms-store";
 
 function NotFoundComponent() {
   return (
