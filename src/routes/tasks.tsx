@@ -205,9 +205,6 @@ function TasksPage() {
     setOpen(true);
   }
 
-  function toggle(id: string) {
-    setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
-  }
 
   function submit() {
     if (!taskName.trim() || selected.length === 0 || !templateId) return;
