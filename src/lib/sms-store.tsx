@@ -65,6 +65,8 @@ export function isValidPhone(phone: string) {
   return digits.length >= 7 && digits.length <= 15;
 }
 
+export const digitsOf = (phone: string) => phone.replace(/\D/g, "");
+
 export function isValidTargetRow(row: { name: string; phone: string }) {
   return row.name.trim().length > 0 && row.name.trim().length <= 60 && isValidPhone(row.phone);
 }
@@ -209,9 +211,9 @@ type State = {
 };
 
 type Store = State & {
-  addTarget: (t: Omit<Target, "id">) => void;
-  importTargets: (rows: Omit<Target, "id">[]) => number;
-  updateTarget: (id: string, t: Omit<Target, "id">) => void;
+  addTarget: (t: Omit<Target, "id">) => boolean;
+  importTargets: (rows: Omit<Target, "id">[]) => ImportResult;
+  updateTarget: (id: string, t: Omit<Target, "id">) => boolean;
   removeTarget: (id: string) => void;
   addTemplate: (t: Omit<Template, "id">) => void;
   updateTemplate: (id: string, t: Omit<Template, "id">) => void;
@@ -221,6 +223,8 @@ type Store = State & {
   targetById: (id: string) => Target | undefined;
   templateById: (id: string) => Template | undefined;
 };
+
+export type ImportResult = { added: number; invalid: number; duplicated: number };
 
 const StoreContext = createContext<Store | null>(null);
 const KEY = "sms-console-state-v2";
@@ -253,22 +257,46 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
   }, [state]);
 
   const addTarget = useCallback((t: Omit<Target, "id">) => {
-    setState((s) => ({ ...s, targets: [{ id: uid(), ...t }, ...s.targets] }));
+    if (!isValidTargetRow(t)) return false;
+    setState((s) => ({
+      ...s,
+      targets: [{ id: uid(), ...t, phone: t.phone.trim() }, ...s.targets],
+    }));
+    return true;
   }, []);
 
   const importTargets = useCallback((rows: Omit<Target, "id">[]) => {
-    setState((s) => ({
-      ...s,
-      targets: [...rows.map((r) => ({ id: uid(), ...r })), ...s.targets],
-    }));
-    return rows.length;
+    const result: ImportResult = { added: 0, invalid: 0, duplicated: 0 };
+    setState((s) => {
+      const seen = new Set(s.targets.map((t) => digitsOf(t.phone)));
+      const accepted: Target[] = [];
+      for (const r of rows) {
+        if (!isValidTargetRow(r)) {
+          result.invalid += 1;
+          continue;
+        }
+        const key = digitsOf(r.phone);
+        if (seen.has(key)) {
+          result.duplicated += 1;
+          continue;
+        }
+        seen.add(key);
+        accepted.push({ id: uid(), ...r, phone: r.phone.trim() });
+      }
+      result.added = accepted.length;
+      if (accepted.length === 0) return s;
+      return { ...s, targets: [...accepted, ...s.targets] };
+    });
+    return result;
   }, []);
 
   const updateTarget = useCallback((id: string, t: Omit<Target, "id">) => {
+    if (!isValidTargetRow(t)) return false;
     setState((s) => ({
       ...s,
-      targets: s.targets.map((x) => (x.id === id ? { id, ...t } : x)),
+      targets: s.targets.map((x) => (x.id === id ? { id, ...t, phone: t.phone.trim() } : x)),
     }));
+    return true;
   }, []);
 
   const removeTarget = useCallback((id: string) => {
