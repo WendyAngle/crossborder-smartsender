@@ -76,6 +76,8 @@ function DetailsPage() {
     });
   }, [records, query, statusFilter, replyFilter, targetById]);
 
+  const { pageItems, props: pageProps } = usePagination(filtered);
+
   const delivered = records.filter((r) => r.status === "delivered").length;
   const replies = records.filter((r) => r.reply).length;
   const credits = records.reduce((s, r) => s + (r.status === "failed" ? 0 : r.credits), 0);
@@ -188,7 +190,7 @@ function DetailsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {filtered.map((r) => {
+              {pageItems.map((r) => {
                 const t = targetById(r.targetId);
                 return (
                   <tr key={r.id} className="transition-colors hover:bg-background/70">
