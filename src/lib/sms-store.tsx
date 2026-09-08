@@ -21,11 +21,21 @@ export type Template = {
   content: string;
 };
 
+/** 发信内容类型：text = 纯文本短信；image = 由模板内容自动生成的图片短信（MMS） */
+export type MsgType = "text" | "image";
+
+export const MSG_TYPE_LABEL: Record<MsgType, string> = {
+  text: "文本",
+  image: "图片",
+};
+
 export type Task = {
   id: string;
   name: string;
   targetIds: string[];
   templateId: string;
+  /** 发信内容类型，缺省视为 text（兼容历史数据） */
+  msgType: MsgType;
   createdAt: string;
 };
 
@@ -57,6 +67,8 @@ export type SmsRecord = {
   /** 同一目标的一次对话，群发首条与后续人工回复共用同一个 threadId */
   threadId: string;
   kind: SmsKind;
+  /** 发信内容类型：图片短信的图片由发送内容自动生成 */
+  msgType: MsgType;
   /** 会话内序号，从 1 开始 */
   seq: number;
   status: SmsStatus;
@@ -111,9 +123,13 @@ export function renderTemplate(content: string, contactName = "Sophia") {
   return out;
 }
 
-export function countCredits(content: string) {
+/** 图片短信（MMS）在文本计费基础上加收图片附加费 */
+export const IMAGE_SURCHARGE = 30;
+
+export function countCredits(content: string, msgType: MsgType = "text") {
   const len = renderTemplate(content).length;
-  return Math.max(1, Math.ceil(len / 70)) * 12;
+  const base = Math.max(1, Math.ceil(len / 70)) * 12;
+  return msgType === "image" ? base + IMAGE_SURCHARGE : base;
 }
 
 // 固定基准时间，避免服务端与浏览器渲染出不同的示例时间
@@ -180,6 +196,7 @@ const initialTasks: Task[] = [
     name: "跨境促销 · 新客群",
     targetIds: ["t1", "t3", "t5"],
     templateId: "tpl1",
+    msgType: "text",
     createdAt: ts(180),
   },
   {
@@ -187,6 +204,7 @@ const initialTasks: Task[] = [
     name: "欧洲区 · 限时折扣",
     targetIds: ["t2"],
     templateId: "tpl2",
+    msgType: "image",
     createdAt: ts(120),
   },
 ];
@@ -197,6 +215,7 @@ const initialRecords: SmsRecord[] = [
     targetId: "t1",
     threadId: "th1",
     kind: "campaign",
+    msgType: "text",
     seq: 1,
     status: "delivered",
     content:
@@ -215,6 +234,7 @@ const initialRecords: SmsRecord[] = [
     targetId: "t1",
     threadId: "th1",
     kind: "reply",
+    msgType: "text",
     seq: 2,
     status: "delivered",
     content: "[AirHui] US 9 in stock: 26 pairs. Flat shipping $6.9, delivery 5-7 days. Order: airhui.shop/promo",
@@ -232,6 +252,7 @@ const initialRecords: SmsRecord[] = [
     targetId: "t2",
     threadId: "th2",
     kind: "campaign",
+    msgType: "text",
     seq: 1,
     status: "sending",
     content: "[AirHui] Carlos, envío directo transfronterizo al 50% por tiempo limitado. Más info: airhui.shop/promo",
@@ -249,11 +270,12 @@ const initialRecords: SmsRecord[] = [
     targetId: "t3",
     threadId: "th3",
     kind: "campaign",
+    msgType: "image",
     seq: 1,
     status: "delivered",
     content: "[AirHui] Emma, the AirMax line you watched is back in stock. View stock at airhui.shop",
     contentZh: "【信汇】Emma，您关注的 AirMax 跨境直邮专线已到货，前往 airhui.shop 查看库存。",
-    credits: 12,
+    credits: 42,
     createdAt: ts(72),
     succeededAt: ts(71),
     failReason: null,
@@ -266,12 +288,13 @@ const initialRecords: SmsRecord[] = [
     targetId: "t9",
     threadId: "th4",
     kind: "campaign",
+    msgType: "image",
     seq: 1,
     status: "delivered",
     content:
       "【信匯】Yukiさん、初回ご注文が30元OFF。AirMax越境直送便を期間限定で公開中、airhui.shop へ →",
     contentZh: "【信汇】Yuki，首单立减 30 元，AirMax 跨境直邮专线限时开启，点击 airhui.shop 抢购 →",
-    credits: 12,
+    credits: 42,
     createdAt: ts(64),
     succeededAt: ts(63),
     failReason: null,
@@ -284,6 +307,7 @@ const initialRecords: SmsRecord[] = [
     targetId: "t6",
     threadId: "th5",
     kind: "campaign",
+    msgType: "text",
     seq: 1,
     status: "delivered",
     content:
@@ -302,6 +326,7 @@ const initialRecords: SmsRecord[] = [
     targetId: "t5",
     threadId: "th6",
     kind: "campaign",
+    msgType: "text",
     seq: 1,
     status: "delivered",
     content: "【信汇】李静，首单立减 30 元，AirMax 跨境直邮专线限时开启，点击 airhui.shop 抢购 →",
@@ -319,6 +344,7 @@ const initialRecords: SmsRecord[] = [
     targetId: "t7",
     threadId: "th7",
     kind: "campaign",
+    msgType: "text",
     seq: 1,
     status: "sent",
     content:
@@ -337,11 +363,12 @@ const initialRecords: SmsRecord[] = [
     targetId: "t12",
     threadId: "th8",
     kind: "campaign",
+    msgType: "image",
     seq: 1,
     status: "sent",
     content: "[AirHui] Olivia, 50% off cross-border direct shipping, limited time. Details: airhui.shop/promo",
     contentZh: "【信汇】Olivia，跨境直邮 5 折限时开启，详情见 airhui.shop/promo",
-    credits: 15,
+    credits: 45,
     createdAt: ts(36),
     succeededAt: null,
     failReason: null,
@@ -354,6 +381,7 @@ const initialRecords: SmsRecord[] = [
     targetId: "t11",
     threadId: "th9",
     kind: "campaign",
+    msgType: "text",
     seq: 1,
     status: "failed",
     content: "[AirHui] Raj, the AirMax line you follow is back in stock. Check availability: airhui.shop",
@@ -383,7 +411,12 @@ type Store = State & {
   addTemplate: (t: Omit<Template, "id">) => void;
   updateTemplate: (id: string, t: Omit<Template, "id">) => void;
   removeTemplate: (id: string) => void;
-  createTask: (input: { name: string; targetIds: string[]; templateId: string }) => void;
+  createTask: (input: {
+    name: string;
+    targetIds: string[];
+    templateId: string;
+    msgType: MsgType;
+  }) => void;
   sendReply: (recordId: string, text: string) => void;
   threadRecords: (threadId: string) => SmsRecord[];
   /** 由短信明细推导的目标最近触达状态 */
@@ -395,7 +428,7 @@ type Store = State & {
 export type ImportResult = { added: number; invalid: number; duplicated: number };
 
 const StoreContext = createContext<Store | null>(null);
-const KEY = "sms-console-state-v4";
+const KEY = "sms-console-state-v5";
 
 export const REACH_LABEL: Record<ReachStatus, string> = {
   untouched: "未触达",
@@ -513,12 +546,22 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const createTask = useCallback(
-    ({ name, targetIds, templateId }: { name: string; targetIds: string[]; templateId: string }) => {
+    ({
+      name,
+      targetIds,
+      templateId,
+      msgType,
+    }: {
+      name: string;
+      targetIds: string[];
+      templateId: string;
+      msgType: MsgType;
+    }) => {
       setState((s) => {
         const tpl = s.templates.find((t) => t.id === templateId);
         if (!tpl) return s;
         const now = new Date().toISOString();
-        const task: Task = { id: uid(), name, targetIds, templateId, createdAt: now };
+        const task: Task = { id: uid(), name, targetIds, templateId, msgType, createdAt: now };
         const records: SmsRecord[] = targetIds.map((tid) => {
           const target = s.targets.find((t) => t.id === tid);
           const content = renderTemplate(tpl.content, target?.name ?? "客户");
@@ -527,11 +570,12 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
             targetId: tid,
             threadId: uid(),
             kind: "campaign",
+    msgType: "text",
             seq: 1,
             status: "sending",
             content,
             contentZh: null,
-            credits: countCredits(tpl.content),
+            credits: countCredits(tpl.content, msgType),
             createdAt: now,
             succeededAt: null,
             failReason: null,
@@ -559,6 +603,7 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
         targetId: src.targetId,
         threadId: src.threadId,
         kind: "reply",
+    msgType: "text",
         seq,
         status: "sending",
         content: text,
