@@ -21,7 +21,7 @@ export function AppShell({
   drawer?: ReactNode | undefined;
 }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const { templates, records } = useSmsStore();
+  const { records } = useSmsStore();
   const usedCredits = records.reduce((sum, r) => sum + (r.status === "failed" ? 0 : r.credits), 0);
   const balance = 12480;
 
