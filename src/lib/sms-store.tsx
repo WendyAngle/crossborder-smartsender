@@ -110,7 +110,7 @@ export function formatTime(value: string | null) {
   if (!value) return null;
   const d = new Date(value);
   const p = (n: number) => String(n).padStart(2, "0");
-  return `${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+  return `${p(d.getUTCMonth() + 1)}-${p(d.getUTCDate())} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}`;
 }
 
 const initialTargets: Target[] = [
