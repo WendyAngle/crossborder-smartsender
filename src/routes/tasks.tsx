@@ -34,6 +34,12 @@ function TasksPage() {
   const [selected, setSelected] = useState<string[]>([]);
   const [templateId, setTemplateId] = useState(templates[0]?.id ?? "");
 
+  // 已成功发送或正在发送中的目标不可重复选择
+  const busyIds = new Set(
+    records.filter((r) => r.status !== "failed").map((r) => r.targetId),
+  );
+  const available = targets.filter((t) => !busyIds.has(t.id));
+
   const template = templateById(templateId);
   const previewTarget = targets.find((t) => t.id === selected[0]);
   const preview = template
