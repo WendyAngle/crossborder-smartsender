@@ -113,6 +113,24 @@ function DetailsPage() {
   const [typeFilter, setTypeFilter] = useState<"all" | MsgType>("all");
   const [replyTo, setReplyTo] = useState<SmsRecord | null>(null);
   const [replyText, setReplyText] = useState("");
+  const [translating, setTranslating] = useState(false);
+  const [translateError, setTranslateError] = useState("");
+  const [originalText, setOriginalText] = useState("");
+  const translate = useServerFn(translateForRegion);
+
+  async function doTranslate(text: string, region: string) {
+    setTranslating(true);
+    setTranslateError("");
+    try {
+      const res = await translate({ data: { text: text.trim(), region } });
+      setOriginalText(text.trim());
+      setReplyText(res.translated);
+    } catch (e) {
+      setTranslateError(e instanceof Error ? e.message : "翻译失败，请稍后重试");
+    } finally {
+      setTranslating(false);
+    }
+  }
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
