@@ -395,7 +395,33 @@ type Store = State & {
 export type ImportResult = { added: number; invalid: number; duplicated: number };
 
 const StoreContext = createContext<Store | null>(null);
-const KEY = "sms-console-state-v3";
+const KEY = "sms-console-state-v4";
+
+export const REACH_LABEL: Record<ReachStatus, string> = {
+  untouched: "未触达",
+  sending: "发送中",
+  sent: "已发送",
+  delivered: "已送达",
+  failed: "送达失败",
+};
+
+/** 取该目标最近一条外发短信的状态作为触达状态 */
+export function computeReach(targetId: string, records: SmsRecord[]): Reach {
+  const mine = records
+    .filter((r) => r.targetId === targetId)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const last = mine[0];
+  if (!last) {
+    return { status: "untouched", lastAt: null, failReason: null, replied: false, count: 0 };
+  }
+  return {
+    status: last.status,
+    lastAt: last.createdAt,
+    failReason: last.failReason,
+    replied: mine.some((r) => !!r.reply),
+    count: mine.length,
+  };
+}
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 
