@@ -386,6 +386,8 @@ type Store = State & {
   createTask: (input: { name: string; targetIds: string[]; templateId: string }) => void;
   sendReply: (recordId: string, text: string) => void;
   threadRecords: (threadId: string) => SmsRecord[];
+  /** 由短信明细推导的目标最近触达状态 */
+  reachOf: (targetId: string) => Reach;
   targetById: (id: string) => Target | undefined;
   templateById: (id: string) => Template | undefined;
 };
