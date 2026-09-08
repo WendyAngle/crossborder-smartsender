@@ -176,17 +176,6 @@ const initialRecords: SmsRecord[] = [
     reply: null,
   },
   {
-    id: "r4",
-    targetId: "t4",
-    status: "failed",
-    content: renderTemplate(initialTemplates[3]!.content, "Ahmed"),
-    credits: 15,
-    createdAt: ts(64),
-    succeededAt: null,
-    failReason: "号码格式无效",
-    reply: null,
-  },
-  {
     id: "r5",
     targetId: "t5",
     status: "delivered",
