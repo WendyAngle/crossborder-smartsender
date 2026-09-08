@@ -29,11 +29,7 @@ export function SmsPoster({
   const title = size === "sm" ? "text-[11px]" : size === "md" ? "text-[15px]" : "text-lg";
   return (
     <div className={`overflow-hidden rounded-xl border border-border bg-white ${pad}`}>
-      <div className="flex items-center justify-between text-[9px] uppercase tracking-widest text-foreground/40">
-        <span>AirHui · 图片短信</span>
-        <span>MMS</span>
-      </div>
-      <div className={`mt-2 font-display font-semibold leading-snug text-foreground ${title}`}>
+      <div className={`font-display font-semibold leading-snug text-foreground ${title}`}>
         {content}
       </div>
       <div className="mt-3 border-t border-border pt-2">
