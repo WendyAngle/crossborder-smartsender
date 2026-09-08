@@ -254,6 +254,8 @@ function DetailsPage() {
             </tbody>
           </table>
         </div>
+
+        <Pagination {...pageProps} />
       </section>
     </AppShell>
   );

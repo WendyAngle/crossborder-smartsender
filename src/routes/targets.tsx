@@ -43,6 +43,8 @@ function TargetsPage() {
     );
   }, [targets, query]);
 
+  const { pageItems, props: pageProps } = usePagination(filtered);
+
   const regions = new Set(targets.map((t) => t.region)).size;
 
   function openSingle(target?: Target) {
