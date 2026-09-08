@@ -424,13 +424,19 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
           return {
             id: uid(),
             targetId: tid,
+            threadId: uid(),
+            kind: "campaign",
+            seq: 1,
             status: "sending",
             content,
+            contentZh: null,
             credits: countCredits(tpl.content),
             createdAt: now,
             succeededAt: null,
             failReason: null,
             reply: null,
+            replyZh: null,
+            replyAt: null,
           };
         });
         return { ...s, tasks: [task, ...s.tasks], records: [...records, ...s.records] };
@@ -439,15 +445,33 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  /** 我方跟进回复：在同一会话内新增一条外发短信记录，不覆盖原记录 */
   const sendReply = useCallback((recordId: string, text: string) => {
-    setState((s) => ({
-      ...s,
-      records: s.records.map((r) =>
-        r.id === recordId
-          ? { ...r, content: `${r.content}\n[我方回复] ${text}`, reply: r.reply }
-          : r,
-      ),
-    }));
+    setState((s) => {
+      const src = s.records.find((r) => r.id === recordId);
+      if (!src) return s;
+      const seq =
+        Math.max(...s.records.filter((r) => r.threadId === src.threadId).map((r) => r.seq)) + 1;
+      const now = new Date().toISOString();
+      const followUp: SmsRecord = {
+        id: uid(),
+        targetId: src.targetId,
+        threadId: src.threadId,
+        kind: "reply",
+        seq,
+        status: "sending",
+        content: text,
+        contentZh: null,
+        credits: countCredits(text),
+        createdAt: now,
+        succeededAt: null,
+        failReason: null,
+        reply: null,
+        replyZh: null,
+        replyAt: null,
+      };
+      return { ...s, records: [followUp, ...s.records] };
+    });
   }, []);
 
   const value = useMemo<Store>(
