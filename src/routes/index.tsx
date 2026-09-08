@@ -55,6 +55,7 @@ function DetailsPage() {
   const { records, targetById, sendReply } = useSmsStore();
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | SmsStatus>("all");
+  const [replyFilter, setReplyFilter] = useState<"all" | "yes" | "no">("all");
   const [replyTo, setReplyTo] = useState<SmsRecord | null>(null);
   const [replyText, setReplyText] = useState("");
 
@@ -62,6 +63,8 @@ function DetailsPage() {
     const q = query.trim().toLowerCase();
     return records.filter((r) => {
       if (statusFilter !== "all" && r.status !== statusFilter) return false;
+      if (replyFilter === "yes" && !r.reply) return false;
+      if (replyFilter === "no" && r.reply) return false;
       if (!q) return true;
       const t = targetById(r.targetId);
       return (
@@ -70,7 +73,7 @@ function DetailsPage() {
         r.content.toLowerCase().includes(q)
       );
     });
-  }, [records, query, statusFilter, targetById]);
+  }, [records, query, statusFilter, replyFilter, targetById]);
 
   const delivered = records.filter((r) => r.status === "delivered").length;
   const replies = records.filter((r) => r.reply).length;
@@ -155,6 +158,15 @@ function DetailsPage() {
               <option value="delivered">已送达</option>
               <option value="sending">发送中</option>
               <option value="failed">失败</option>
+            </select>
+            <select
+              className="field w-24 py-1.5 text-xs"
+              value={replyFilter}
+              onChange={(e) => setReplyFilter(e.target.value as "all" | "yes" | "no")}
+            >
+              <option value="all">全部回复</option>
+              <option value="yes">已回复</option>
+              <option value="no">未回复</option>
             </select>
           </div>
         </div>
