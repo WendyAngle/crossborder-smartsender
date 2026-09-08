@@ -56,6 +56,19 @@ const SAMPLE_VALUES: Record<string, string> = {
   "{其他链接}": "airhui.shop/promo",
 };
 
+/** 手机号格式校验：可选 + 开头，仅允许数字与空格 / - / ( )，有效数字位数 7-15 位 */
+export function isValidPhone(phone: string) {
+  const raw = phone.trim();
+  if (!raw) return false;
+  if (!/^\+?[\d\s\-()]+$/.test(raw)) return false;
+  const digits = raw.replace(/\D/g, "");
+  return digits.length >= 7 && digits.length <= 15;
+}
+
+export function isValidTargetRow(row: { name: string; phone: string }) {
+  return row.name.trim().length > 0 && row.name.trim().length <= 60 && isValidPhone(row.phone);
+}
+
 export function renderTemplate(content: string, contactName = "Sophia") {
   let out = content.replaceAll("{联系人}", contactName);
   for (const [token, value] of Object.entries(SAMPLE_VALUES)) {
