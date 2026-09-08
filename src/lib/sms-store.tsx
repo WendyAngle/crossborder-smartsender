@@ -589,6 +589,7 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
       sendReply,
       threadRecords: (threadId) =>
         state.records.filter((r) => r.threadId === threadId).sort((a, b) => a.seq - b.seq),
+      reachOf: (targetId) => computeReach(targetId, state.records),
       targetById: (id) => state.targets.find((t) => t.id === id),
       templateById: (id) => state.templates.find((t) => t.id === id),
     }),
