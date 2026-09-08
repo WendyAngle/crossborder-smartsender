@@ -194,7 +194,7 @@ const initialTasks: Task[] = [
   {
     id: "task1",
     name: "跨境促销 · 新客群",
-    targetIds: ["t1", "t3", "t5"],
+    targetIds: ["t1", "t5"],
     templateId: "tpl1",
     msgType: "text",
     createdAt: ts(180),
@@ -204,8 +204,16 @@ const initialTasks: Task[] = [
     name: "欧洲区 · 限时折扣",
     targetIds: ["t2"],
     templateId: "tpl2",
-    msgType: "image",
+    msgType: "text",
     createdAt: ts(120),
+  },
+  {
+    id: "task3",
+    name: "到货提醒 · 图片短信",
+    targetIds: ["t3", "t9", "t12"],
+    templateId: "tpl3",
+    msgType: "image",
+    createdAt: ts(75),
   },
 ];
 
