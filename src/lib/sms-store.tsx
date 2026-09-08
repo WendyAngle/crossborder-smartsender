@@ -313,6 +313,7 @@ type Store = State & {
   removeTemplate: (id: string) => void;
   createTask: (input: { name: string; targetIds: string[]; templateId: string }) => void;
   sendReply: (recordId: string, text: string) => void;
+  threadRecords: (threadId: string) => SmsRecord[];
   targetById: (id: string) => Target | undefined;
   templateById: (id: string) => Template | undefined;
 };
@@ -320,7 +321,7 @@ type Store = State & {
 export type ImportResult = { added: number; invalid: number; duplicated: number };
 
 const StoreContext = createContext<Store | null>(null);
-const KEY = "sms-console-state-v2";
+const KEY = "sms-console-state-v3";
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 
@@ -486,6 +487,8 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
       removeTemplate,
       createTask,
       sendReply,
+      threadRecords: (threadId) =>
+        state.records.filter((r) => r.threadId === threadId).sort((a, b) => a.seq - b.seq),
       targetById: (id) => state.targets.find((t) => t.id === id),
       templateById: (id) => state.templates.find((t) => t.id === id),
     }),
