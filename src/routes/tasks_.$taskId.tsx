@@ -4,7 +4,16 @@ import { AppShell, StatCard } from "@/components/app-shell";
 import { Pagination, usePagination } from "@/components/pagination";
 import { ReachCell } from "@/components/reach";
 import { MsgTypePill } from "@/components/sms-image";
-import { REACH_LABEL, formatTime, useSmsStore, type ReachStatus } from "@/lib/sms-store";
+import { TaskProgressBar, TaskStatusPill } from "@/components/task-status";
+import {
+  REACH_LABEL,
+  formatTime,
+  renderTemplate,
+  useSmsStore,
+  type Reach,
+  type ReachStatus,
+  type SmsRecord,
+} from "@/lib/sms-store";
 
 export const Route = createFileRoute("/tasks_/$taskId")({
   head: () => ({
@@ -26,20 +35,27 @@ export const Route = createFileRoute("/tasks_/$taskId")({
 
 function TaskTargetsPage() {
   const { taskId } = Route.useParams();
-  const { tasks, templateById, targetById, reachOf } = useSmsStore();
+  const { tasks, templateById, targetById, taskRecords, taskStatOf } = useSmsStore();
   const [query, setQuery] = useState("");
   const [reachFilter, setReachFilter] = useState<"all" | ReachStatus>("all");
 
   const task = tasks.find((t) => t.id === taskId);
   const template = task ? templateById(task.templateId) : undefined;
 
+  // 任务内的触达状态只统计本任务下发的短信，避免被其他任务的记录干扰
+  const records = useMemo(() => (task ? taskRecords(task.id) : []), [task, taskRecords]);
+  const stat = useMemo(
+    () => (task ? taskStatOf(task) : null),
+    [task, taskStatOf],
+  );
+
   const rows = useMemo(() => {
     if (!task) return [];
     return task.targetIds
       .map((id) => targetById(id))
       .filter((t): t is NonNullable<typeof t> => !!t)
-      .map((t) => ({ target: t, reach: reachOf(t.id) }));
-  }, [task, targetById, reachOf]);
+      .map((t) => ({ target: t, reach: reachInTask(t.id, records) }));
+  }, [task, targetById, records]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -51,10 +67,6 @@ function TaskTargetsPage() {
   }, [rows, query, reachFilter]);
 
   const { pageItems, props: pageProps } = usePagination(filtered, 12);
-
-  const delivered = rows.filter((r) => r.reach.status === "delivered").length;
-  const failed = rows.filter((r) => r.reach.status === "failed").length;
-  const replied = rows.filter((r) => r.reach.replied).length;
 
   if (!task) {
     return (
@@ -72,24 +84,68 @@ function TaskTargetsPage() {
   }
 
   return (
-    <AppShell title={task.name} subtitle="任务触达目标明细">
+    <AppShell title={task.name} subtitle="任务详情与触达明细">
       <div className="mb-4 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
         <Link to="/tasks" className="btn-ghost px-3 py-1.5 text-xs">
           ← 返回任务列表
         </Link>
+        {stat && <TaskStatusPill status={stat.status} />}
         <span>发信模板：{template?.name ?? "已删除模板"}</span>
         <span className="inline-flex items-center gap-1.5">
           内容类型：<MsgTypePill type={task.msgType ?? "text"} />
         </span>
         <span className="tabular-nums">创建时间：{formatTime(task.createdAt)}</span>
+        <span className="tabular-nums">最近发送：{formatTime(stat?.lastAt ?? null) ?? "—"}</span>
       </div>
 
+      {stat && (
+        <section className="panel mb-5 px-5 py-4">
+          <div className="flex flex-wrap items-baseline gap-3">
+            <h2 className="font-display text-[15px] font-semibold">发送进度</h2>
+            <span className="text-xs text-muted-foreground">
+              已出结果 {stat.delivered + stat.failed} / {stat.total} 个目标 · 消耗 {stat.credits} 积分
+            </span>
+            <span className="ml-auto text-sm font-semibold tabular-nums text-primary">
+              {stat.progress}%
+            </span>
+          </div>
+          <div className="mt-3">
+            <TaskProgressBar stat={stat} />
+          </div>
+          <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
+            <span className="inline-flex items-center gap-1.5">
+              <span className="size-1.5 rounded-full bg-primary" />已送达 {stat.delivered}
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="size-1.5 rounded-full bg-destructive" />送达失败 {stat.failed}
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="size-1.5 rounded-full bg-warning" />发送中 {stat.sending} · 待回执{" "}
+              {stat.sent}
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="size-1.5 rounded-full bg-muted-foreground/40" />未触达{" "}
+              {stat.untouched}
+            </span>
+          </div>
+        </section>
+      )}
+
       <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard label="目标数" value={String(rows.length)} tone="primary" />
-        <StatCard label="已送达" value={String(delivered)} />
-        <StatCard label="送达失败" value={String(failed)} />
-        <StatCard label="已回复" value={String(replied)} />
+        <StatCard label="目标数" value={String(stat?.total ?? rows.length)} tone="primary" />
+        <StatCard label="已送达" value={String(stat?.delivered ?? 0)} />
+        <StatCard label="送达失败" value={String(stat?.failed ?? 0)} />
+        <StatCard label="已回复" value={String(stat?.replied ?? 0)} />
       </div>
+
+      {template && (
+        <section className="panel mb-5 px-5 py-4">
+          <h2 className="font-display text-[15px] font-semibold">发信内容</h2>
+          <p className="mt-2 whitespace-pre-wrap rounded-xl bg-background p-3 text-[13px] leading-relaxed text-foreground/80">
+            {renderTemplate(template.content, "客户")}
+          </p>
+        </section>
+      )}
 
       <section className="panel overflow-hidden">
         <div className="flex flex-wrap items-center gap-3 border-b border-border px-5 py-4">
@@ -162,4 +218,22 @@ function TaskTargetsPage() {
       </section>
     </AppShell>
   );
+}
+
+/** 只在本任务的短信明细内推导某个目标的触达状态 */
+function reachInTask(targetId: string, records: SmsRecord[]): Reach {
+  const mine = records
+    .filter((r) => r.targetId === targetId)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const last = mine[0];
+  if (!last) {
+    return { status: "untouched", lastAt: null, failReason: null, replied: false, count: 0 };
+  }
+  return {
+    status: last.status,
+    lastAt: last.createdAt,
+    failReason: last.failReason,
+    replied: mine.some((r) => !!r.reply),
+    count: mine.length,
+  };
 }
