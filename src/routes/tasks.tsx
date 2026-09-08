@@ -57,7 +57,7 @@ function TargetPicker({
     });
   }, [available, query, region, onlySelected, selected]);
 
-  const { pageItems, props: pageProps } = usePagination(filtered, 8);
+  const { pageItems, props: pageProps } = usePagination(filtered);
   const pageIds = pageItems.map((t) => t.id);
   const pageAllOn = pageIds.length > 0 && pageIds.every((id) => selected.includes(id));
 
