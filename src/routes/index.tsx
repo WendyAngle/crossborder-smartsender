@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState, type ReactNode } from "react";
 import { AppShell, Drawer, StatCard } from "@/components/app-shell";
 import { Pagination, usePagination } from "@/components/pagination";
-import { MsgTypePill, PosterThumb, SmsPoster } from "@/components/sms-image";
+import { MsgTypePill, SmsPoster } from "@/components/sms-image";
 import {
   formatTime,
   useSmsStore,
@@ -354,16 +354,14 @@ function DetailsPage() {
                         translated={r.contentZh}
                         poster={(r.msgType ?? "text") === "image"}
                       >
-                        <span className="flex items-center gap-2">
-                          {(r.msgType ?? "text") === "image" && <PosterThumb content={r.content} />}
-                          <span className="block">
-                            <MsgTypePill type={r.msgType ?? "text"} />
-                            <span className="mt-0.5 block max-w-40 truncate underline decoration-dotted decoration-border underline-offset-4">
-                              {r.content}
-                            </span>
+                        <span className="block">
+                          <MsgTypePill type={r.msgType ?? "text"} />
+                          <span className="mt-0.5 block max-w-40 truncate underline decoration-dotted decoration-border underline-offset-4">
+                            {r.content}
                           </span>
                         </span>
                       </HoverBubble>
+
                     </td>
                     <td className="px-3 py-3 tabular-nums text-muted-foreground">{r.credits}</td>
                     <td className="whitespace-nowrap px-3 py-3 text-xs tabular-nums text-muted-foreground">
