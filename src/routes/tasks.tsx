@@ -227,6 +227,7 @@ function TasksPage() {
           <Drawer
             title="新建任务"
             hint="草稿"
+            width="w-[620px]"
             onClose={() => setOpen(false)}
             footer={
               <>
