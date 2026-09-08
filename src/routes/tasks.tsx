@@ -3,15 +3,18 @@ import { useMemo, useState } from "react";
 import { AppShell, Drawer, StatCard } from "@/components/app-shell";
 import { Pagination, usePagination } from "@/components/pagination";
 import { MsgTypePill, SmsPoster } from "@/components/sms-image";
+import { TaskStatusCell } from "@/components/task-status";
 import {
   autoTaskName,
   IMAGE_SURCHARGE,
+  TASK_STATUS_LABEL,
   countCredits,
   formatTime,
   renderTemplate,
   useSmsStore,
   type MsgType,
   type Target,
+  type TaskStatus,
 } from "@/lib/sms-store";
 
 export const Route = createFileRoute("/tasks")({
@@ -183,12 +186,16 @@ function TargetPicker({
 }
 
 function TasksPage() {
-  const { tasks, targets, templates, records, createTask, templateById } = useSmsStore();
+  const { tasks, targets, templates, records, createTask, templateById, taskStatOf } =
+    useSmsStore();
   const [open, setOpen] = useState(false);
   const [taskName, setTaskName] = useState(autoTaskName());
   const [selected, setSelected] = useState<string[]>([]);
   const [templateId, setTemplateId] = useState(templates[0]?.id ?? "");
   const [msgType, setMsgType] = useState<MsgType>("text");
+  const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | TaskStatus>("all");
+  const [typeFilter, setTypeFilter] = useState<"all" | MsgType>("all");
 
   // 已送达或正在发送中的目标不可重复选择；已发送（无回执）与送达失败可再次触达
   const busyIds = new Set(
@@ -219,8 +226,25 @@ function TasksPage() {
     setOpen(false);
   }
 
+  const rows = useMemo(
+    () => tasks.map((task) => ({ task, stat: taskStatOf(task) })),
+    [tasks, taskStatOf],
+  );
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return rows.filter(({ task, stat }) => {
+      if (statusFilter !== "all" && stat.status !== statusFilter) return false;
+      if (typeFilter !== "all" && (task.msgType ?? "text") !== typeFilter) return false;
+      if (!q) return true;
+      const tplName = templateById(task.templateId)?.name ?? "";
+      return [task.name, tplName].some((v) => v.toLowerCase().includes(q));
+    });
+  }, [rows, query, statusFilter, typeFilter, templateById]);
+
+  const statusCount = (s: TaskStatus) => rows.filter((r) => r.stat.status === s).length;
   const totalSent = tasks.reduce((s, t) => s + t.targetIds.length, 0);
-  const { pageItems, props: pageProps } = usePagination(tasks);
+  const { pageItems, props: pageProps } = usePagination(filtered);
 
   return (
     <AppShell
@@ -353,14 +377,55 @@ function TasksPage() {
       <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard label="任务总数" value={String(tasks.length)} />
         <StatCard label="累计发信" value={String(totalSent)} tone="primary" />
-        <StatCard label="可用模板" value={String(templates.length)} />
-        <StatCard label="目标名单" value={String(targets.length)} />
+        <StatCard label="发送中任务" value={String(statusCount("sending"))} />
+        <StatCard label="存在失败的任务" value={String(statusCount("partial") + statusCount("failed"))} />
       </div>
 
       <section className="panel overflow-hidden">
-        <div className="flex items-center gap-3 border-b border-border px-5 py-4">
+        <div className="flex flex-wrap items-center gap-3 border-b border-border px-5 py-4">
           <h2 className="font-display text-[15px] font-semibold">任务列表</h2>
-          <span className="text-xs text-muted-foreground">共 {tasks.length} 条</span>
+          <span className="text-xs text-muted-foreground">
+            共 {tasks.length} 条 · 命中 {filtered.length} 条
+          </span>
+          <input
+            className="field w-52 py-1.5 text-xs"
+            placeholder="搜索任务名称 / 模板"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+          <select
+            className="field w-28 py-1.5 text-xs"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as "all" | TaskStatus)}
+          >
+            <option value="all">全部状态</option>
+            {(Object.keys(TASK_STATUS_LABEL) as TaskStatus[]).map((s) => (
+              <option key={s} value={s}>
+                {TASK_STATUS_LABEL[s]}（{statusCount(s)}）
+              </option>
+            ))}
+          </select>
+          <select
+            className="field w-28 py-1.5 text-xs"
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value as "all" | MsgType)}
+          >
+            <option value="all">全部类型</option>
+            <option value="text">文本</option>
+            <option value="image">图片</option>
+          </select>
+          {(query || statusFilter !== "all" || typeFilter !== "all") && (
+            <button
+              className="text-xs font-medium text-muted-foreground hover:underline"
+              onClick={() => {
+                setQuery("");
+                setStatusFilter("all");
+                setTypeFilter("all");
+              }}
+            >
+              重置筛选
+            </button>
+          )}
           <div className="ml-auto">
             <button className="btn-primary px-3 py-1.5 text-xs" onClick={openDrawer}>
               <span className="-ml-0.5 text-base leading-none">+</span> 新建任务
@@ -375,12 +440,14 @@ function TasksPage() {
               <th className="px-3 py-3 font-medium">目标数</th>
               <th className="px-3 py-3 font-medium">发信模板</th>
               <th className="px-3 py-3 font-medium">内容类型</th>
+              <th className="px-3 py-3 font-medium">任务状态</th>
               <th className="px-3 py-3 font-medium">预计积分</th>
-              <th className="px-5 py-3 font-medium">创建时间</th>
+              <th className="px-3 py-3 font-medium">创建时间</th>
+              <th className="px-5 py-3 font-medium">操作</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {pageItems.map((task) => {
+            {pageItems.map(({ task, stat }) => {
               const tpl = templateById(task.templateId);
               return (
                 <tr key={task.id} className="transition-colors hover:bg-background/70">
@@ -398,19 +465,33 @@ function TasksPage() {
                   <td className="px-3 py-3">
                     <MsgTypePill type={task.msgType ?? "text"} />
                   </td>
+                  <td className="px-3 py-3">
+                    <TaskStatusCell stat={stat} />
+                  </td>
                   <td className="px-3 py-3 tabular-nums text-muted-foreground">
                     {tpl ? countCredits(tpl.content, task.msgType ?? "text") * task.targetIds.length : 0}
                   </td>
-                  <td className="whitespace-nowrap px-5 py-3 text-xs tabular-nums text-muted-foreground">
+                  <td className="whitespace-nowrap px-3 py-3 text-xs tabular-nums text-muted-foreground">
                     {formatTime(task.createdAt)}
+                  </td>
+                  <td className="whitespace-nowrap px-5 py-3">
+                    <Link
+                      to="/tasks/$taskId"
+                      params={{ taskId: task.id }}
+                      className="text-xs font-medium text-primary hover:underline"
+                    >
+                      查看详情
+                    </Link>
                   </td>
                 </tr>
               );
             })}
-            {tasks.length === 0 && (
+            {filtered.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-5 py-12 text-center text-sm text-muted-foreground">
-                  暂无任务，点击「新建任务」开始发信
+                <td colSpan={8} className="px-5 py-12 text-center text-sm text-muted-foreground">
+                  {tasks.length === 0
+                    ? "暂无任务，点击「新建任务」开始发信"
+                    : "没有符合筛选条件的任务，试试调整搜索或状态筛选"}
                 </td>
               </tr>
             )}

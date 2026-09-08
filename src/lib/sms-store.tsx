@@ -58,12 +58,49 @@ export type Reach = {
   count: number;
 };
 
+/**
+ * 任务状态（由该任务下的短信明细实时推导，不单独存储）
+ * pending  = 待发送（暂无发信明细）
+ * sending  = 发送中（仍有短信在提交网关）
+ * done     = 已完成（全部目标成功送达）
+ * partial  = 部分失败（有成功也有失败）
+ * failed   = 全部失败
+ */
+export type TaskStatus = "pending" | "sending" | "done" | "partial" | "failed";
+
+export const TASK_STATUS_LABEL: Record<TaskStatus, string> = {
+  pending: "待发送",
+  sending: "发送中",
+  done: "已完成",
+  partial: "部分失败",
+  failed: "全部失败",
+};
+
+export type TaskStat = {
+  status: TaskStatus;
+  /** 目标总数 */
+  total: number;
+  sending: number;
+  /** 已提交运营商，暂无送达回执 */
+  sent: number;
+  delivered: number;
+  failed: number;
+  untouched: number;
+  replied: number;
+  /** 已出结果（送达 + 失败）占比，0-100 */
+  progress: number;
+  credits: number;
+  lastAt: string | null;
+};
+
 /** campaign = 任务群发首条；reply = 我方针对客户回复的人工跟进（同一会话内的新一条短信） */
 export type SmsKind = "campaign" | "reply";
 
 export type SmsRecord = {
   id: string;
   targetId: string;
+  /** 所属群发任务；人工回复继承来源记录的任务，历史数据可能为 null */
+  taskId: string | null;
   /** 同一目标的一次对话，群发首条与后续人工回复共用同一个 threadId */
   threadId: string;
   kind: SmsKind;
@@ -221,6 +258,7 @@ const initialRecords: SmsRecord[] = [
   {
     id: "r1",
     targetId: "t1",
+    taskId: "task1",
     threadId: "th1",
     kind: "campaign",
     msgType: "text",
@@ -240,6 +278,7 @@ const initialRecords: SmsRecord[] = [
   {
     id: "r1b",
     targetId: "t1",
+    taskId: "task1",
     threadId: "th1",
     kind: "reply",
     msgType: "text",
@@ -258,6 +297,7 @@ const initialRecords: SmsRecord[] = [
   {
     id: "r2",
     targetId: "t2",
+    taskId: "task2",
     threadId: "th2",
     kind: "campaign",
     msgType: "text",
@@ -276,6 +316,7 @@ const initialRecords: SmsRecord[] = [
   {
     id: "r3",
     targetId: "t3",
+    taskId: "task3",
     threadId: "th3",
     kind: "campaign",
     msgType: "image",
@@ -294,6 +335,7 @@ const initialRecords: SmsRecord[] = [
   {
     id: "r4",
     targetId: "t9",
+    taskId: "task3",
     threadId: "th4",
     kind: "campaign",
     msgType: "image",
@@ -313,6 +355,7 @@ const initialRecords: SmsRecord[] = [
   {
     id: "r6",
     targetId: "t6",
+    taskId: null,
     threadId: "th5",
     kind: "campaign",
     msgType: "text",
@@ -332,6 +375,7 @@ const initialRecords: SmsRecord[] = [
   {
     id: "r5",
     targetId: "t5",
+    taskId: "task1",
     threadId: "th6",
     kind: "campaign",
     msgType: "text",
@@ -350,6 +394,7 @@ const initialRecords: SmsRecord[] = [
   {
     id: "r7",
     targetId: "t7",
+    taskId: null,
     threadId: "th7",
     kind: "campaign",
     msgType: "text",
@@ -369,6 +414,7 @@ const initialRecords: SmsRecord[] = [
   {
     id: "r8",
     targetId: "t12",
+    taskId: "task3",
     threadId: "th8",
     kind: "campaign",
     msgType: "image",
@@ -387,6 +433,7 @@ const initialRecords: SmsRecord[] = [
   {
     id: "r9",
     targetId: "t11",
+    taskId: null,
     threadId: "th9",
     kind: "campaign",
     msgType: "text",
@@ -427,6 +474,10 @@ type Store = State & {
   }) => void;
   sendReply: (recordId: string, text: string) => void;
   threadRecords: (threadId: string) => SmsRecord[];
+  /** 该任务下每条群发短信的明细（含人工跟进回复） */
+  taskRecords: (taskId: string) => SmsRecord[];
+  /** 由短信明细实时推导的任务状态与进度 */
+  taskStatOf: (task: Task) => TaskStat;
   /** 由短信明细推导的目标最近触达状态 */
   reachOf: (targetId: string) => Reach;
   targetById: (id: string) => Target | undefined;
@@ -436,7 +487,7 @@ type Store = State & {
 export type ImportResult = { added: number; invalid: number; duplicated: number };
 
 const StoreContext = createContext<Store | null>(null);
-const KEY = "sms-console-state-v5";
+const KEY = "sms-console-state-v6";
 
 export const REACH_LABEL: Record<ReachStatus, string> = {
   untouched: "未触达",
@@ -461,6 +512,63 @@ export function computeReach(targetId: string, records: SmsRecord[]): Reach {
     failReason: last.failReason,
     replied: mine.some((r) => !!r.reply),
     count: mine.length,
+  };
+}
+
+/**
+ * 任务状态推导：以任务内每个目标的最近一条群发短信为准。
+ * 兼容历史数据：老记录没有 taskId 时，按目标 + 内容类型回退匹配。
+ */
+export function computeTaskStat(task: Task, records: SmsRecord[]): TaskStat {
+  const mine = records.filter(
+    (r) => r.taskId === task.id || (r.taskId == null && task.targetIds.includes(r.targetId)),
+  );
+  let sending = 0;
+  let sent = 0;
+  let delivered = 0;
+  let failed = 0;
+  let untouched = 0;
+  let replied = 0;
+  let lastAt: string | null = null;
+
+  for (const tid of task.targetIds) {
+    const forTarget = mine
+      .filter((r) => r.targetId === tid)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    const last = forTarget[0];
+    if (!last) {
+      untouched += 1;
+      continue;
+    }
+    if (last.createdAt > (lastAt ?? "")) lastAt = last.createdAt;
+    if (forTarget.some((r) => !!r.reply)) replied += 1;
+    if (last.status === "sending") sending += 1;
+    else if (last.status === "sent") sent += 1;
+    else if (last.status === "delivered") delivered += 1;
+    else failed += 1;
+  }
+
+  const total = task.targetIds.length;
+  const settled = delivered + failed;
+  let status: TaskStatus;
+  if (total === 0 || untouched === total) status = "pending";
+  else if (sending > 0 || sent > 0 || untouched > 0) status = "sending";
+  else if (failed === 0) status = "done";
+  else if (delivered === 0) status = "failed";
+  else status = "partial";
+
+  return {
+    status,
+    total,
+    sending,
+    sent,
+    delivered,
+    failed,
+    untouched,
+    replied,
+    progress: total === 0 ? 0 : Math.round((settled / total) * 100),
+    credits: mine.reduce((sum, r) => sum + r.credits, 0),
+    lastAt,
   };
 }
 
@@ -576,9 +684,10 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
           return {
             id: uid(),
             targetId: tid,
+            taskId: task.id,
             threadId: uid(),
             kind: "campaign",
-    msgType: "text",
+            msgType,
             seq: 1,
             status: "sending",
             content,
@@ -609,9 +718,10 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
       const followUp: SmsRecord = {
         id: uid(),
         targetId: src.targetId,
+        taskId: src.taskId,
         threadId: src.threadId,
         kind: "reply",
-    msgType: "text",
+        msgType: src.msgType,
         seq,
         status: "sending",
         content: text,
@@ -642,6 +752,11 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
       sendReply,
       threadRecords: (threadId) =>
         state.records.filter((r) => r.threadId === threadId).sort((a, b) => a.seq - b.seq),
+      taskRecords: (taskId) =>
+        state.records
+          .filter((r) => r.taskId === taskId)
+          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
+      taskStatOf: (task) => computeTaskStat(task, state.records),
       reachOf: (targetId) => computeReach(targetId, state.records),
       targetById: (id) => state.targets.find((t) => t.id === id),
       templateById: (id) => state.templates.find((t) => t.id === id),
