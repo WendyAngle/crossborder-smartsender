@@ -52,8 +52,41 @@ function StatusPill({ status }: { status: SmsStatus }) {
   );
 }
 
+/** 悬浮气泡：展示实际发送/回复原文 + 中文译文 */
+function HoverBubble({
+  label,
+  original,
+  translated,
+  children,
+}: {
+  label: string;
+  original: string;
+  translated: string | null;
+  children: ReactNode;
+}) {
+  return (
+    <span className="group relative inline-flex cursor-default items-center gap-1">
+      {children}
+      <span className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 hidden w-72 -translate-x-1/2 rounded-xl bg-ink p-3 text-left text-[11px] leading-snug text-ink-foreground/90 shadow-lg group-hover:block">
+        <span className="block text-[10px] uppercase tracking-wide text-ink-foreground/40">
+          {label}
+        </span>
+        <span className="mt-1 block whitespace-pre-wrap">{original}</span>
+        {translated && (
+          <>
+            <span className="mt-2 block border-t border-ink-foreground/15 pt-2 text-[10px] uppercase tracking-wide text-ink-foreground/40">
+              中文译文
+            </span>
+            <span className="mt-1 block whitespace-pre-wrap">{translated}</span>
+          </>
+        )}
+      </span>
+    </span>
+  );
+}
+
 function DetailsPage() {
-  const { records, targetById, sendReply } = useSmsStore();
+  const { records, targetById, sendReply, threadRecords } = useSmsStore();
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | SmsStatus>("all");
   const [replyFilter, setReplyFilter] = useState<"all" | "yes" | "no">("all");
@@ -62,7 +95,7 @@ function DetailsPage() {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return records.filter((r) => {
+    const list = records.filter((r) => {
       if (statusFilter !== "all" && r.status !== statusFilter) return false;
       if (replyFilter === "yes" && !r.reply) return false;
       if (replyFilter === "no" && r.reply) return false;
@@ -71,9 +104,22 @@ function DetailsPage() {
       return (
         (t?.name ?? "").toLowerCase().includes(q) ||
         (t?.phone ?? "").toLowerCase().includes(q) ||
-        r.content.toLowerCase().includes(q)
+        r.content.toLowerCase().includes(q) ||
+        (r.contentZh ?? "").toLowerCase().includes(q)
       );
     });
+    // 同一会话的记录聚在一起：会话按最新时间倒序，会话内按序号正序
+    const latest = new Map<string, number>();
+    for (const r of list) {
+      const t = new Date(r.createdAt).getTime();
+      latest.set(r.threadId, Math.max(latest.get(r.threadId) ?? 0, t));
+    }
+    return [...list].sort(
+      (a, b) =>
+        (latest.get(b.threadId) ?? 0) - (latest.get(a.threadId) ?? 0) ||
+        a.threadId.localeCompare(b.threadId) ||
+        a.seq - b.seq,
+    );
   }, [records, query, statusFilter, replyFilter, targetById]);
 
   const { pageItems, props: pageProps } = usePagination(filtered);
@@ -82,6 +128,8 @@ function DetailsPage() {
   const replies = records.filter((r) => r.reply).length;
   const credits = records.reduce((s, r) => s + (r.status === "failed" ? 0 : r.credits), 0);
 
+  const thread = replyTo ? threadRecords(replyTo.threadId) : [];
+
   return (
     <AppShell
       title="短信明细"
@@ -89,8 +137,9 @@ function DetailsPage() {
       drawer={
         replyTo ? (
           <Drawer
-            title="回复客户"
-            hint={targetById(replyTo.targetId)?.name}
+            title="会话与回复"
+            hint={`${targetById(replyTo.targetId)?.name ?? ""} · ${targetById(replyTo.targetId)?.region ?? ""}`}
+            width="w-[560px]"
             onClose={() => setReplyTo(null)}
             footer={
               <>
@@ -106,25 +155,61 @@ function DetailsPage() {
                     setReplyTo(null);
                   }}
                 >
-                  发送回复
+                  发送回复（新增一条短信）
                 </button>
               </>
             }
           >
             <div>
-              <div className="text-xs font-medium text-muted-foreground">对方回复</div>
-              <div className="mt-1.5 rounded-xl bg-background p-3 text-[13px] leading-relaxed">
-                {replyTo.reply}
+              <div className="text-xs font-medium text-muted-foreground">
+                会话记录 · 共 {thread.length} 条外发
+              </div>
+              <div className="mt-2 space-y-2.5">
+                {thread.map((r) => (
+                  <div key={r.id} className="space-y-2.5">
+                    <div className="rounded-xl bg-background p-3">
+                      <div className="flex items-center gap-2 text-[10px] uppercase tracking-wide text-muted-foreground">
+                        我方 · 第 {r.seq} 条 · {r.kind === "campaign" ? "任务群发" : "人工回复"}
+                        <span className="ml-auto tabular-nums">{formatTime(r.createdAt)}</span>
+                      </div>
+                      <div className="mt-1.5 text-[13px] leading-relaxed">{r.content}</div>
+                      {r.contentZh && (
+                        <div className="mt-1.5 border-t border-border pt-1.5 text-xs text-muted-foreground">
+                          译文：{r.contentZh}
+                        </div>
+                      )}
+                    </div>
+                    {r.reply && (
+                      <div className="ml-6 rounded-xl bg-accent p-3">
+                        <div className="flex items-center gap-2 text-[10px] uppercase tracking-wide text-accent-foreground/70">
+                          对方回复
+                          <span className="ml-auto tabular-nums">{formatTime(r.replyAt)}</span>
+                        </div>
+                        <div className="mt-1.5 text-[13px] leading-relaxed text-accent-foreground">
+                          {r.reply}
+                        </div>
+                        {r.replyZh && (
+                          <div className="mt-1.5 border-t border-accent-foreground/15 pt-1.5 text-xs text-accent-foreground/70">
+                            译文：{r.replyZh}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
             <div>
               <label className="text-xs font-medium text-muted-foreground">回复内容</label>
               <textarea
-                className="field mt-1.5 min-h-32 resize-y"
+                className="field mt-1.5 min-h-28 resize-y"
                 value={replyText}
                 onChange={(e) => setReplyText(e.target.value)}
                 placeholder="输入回复内容…"
               />
+              <p className="mt-1.5 text-[11px] text-muted-foreground">
+                回复将作为同一会话的第 {thread.length + 1} 条短信独立记账，原记录保持不变。
+              </p>
             </div>
           </Drawer>
         ) : null
