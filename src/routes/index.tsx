@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { AppShell, Drawer, StatCard } from "@/components/app-shell";
+import { Pagination, usePagination } from "@/components/pagination";
 import {
   formatTime,
   useSmsStore,
@@ -74,6 +75,8 @@ function DetailsPage() {
       );
     });
   }, [records, query, statusFilter, replyFilter, targetById]);
+
+  const { pageItems, props: pageProps } = usePagination(filtered);
 
   const delivered = records.filter((r) => r.status === "delivered").length;
   const replies = records.filter((r) => r.reply).length;
@@ -187,7 +190,7 @@ function DetailsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {filtered.map((r) => {
+              {pageItems.map((r) => {
                 const t = targetById(r.targetId);
                 return (
                   <tr key={r.id} className="transition-colors hover:bg-background/70">
@@ -251,6 +254,8 @@ function DetailsPage() {
             </tbody>
           </table>
         </div>
+
+        <Pagination {...pageProps} />
       </section>
     </AppShell>
   );

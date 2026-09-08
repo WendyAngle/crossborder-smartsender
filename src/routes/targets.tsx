@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { AppShell, Drawer, StatCard } from "@/components/app-shell";
+import { Pagination, usePagination } from "@/components/pagination";
 import { useSmsStore, type Target } from "@/lib/sms-store";
 
 export const Route = createFileRoute("/targets")({
@@ -41,6 +42,8 @@ function TargetsPage() {
       [t.name, t.phone, t.region].some((v) => v.toLowerCase().includes(q)),
     );
   }, [targets, query]);
+
+  const { pageItems, props: pageProps } = usePagination(filtered);
 
   const regions = new Set(targets.map((t) => t.region)).size;
 
@@ -252,7 +255,7 @@ function TargetsPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {filtered.map((t) => (
+            {pageItems.map((t) => (
               <tr key={t.id} className="transition-colors hover:bg-background/70">
                 <td className="px-5 py-3 font-medium">{t.name}</td>
                 <td className="px-3 py-3 tabular-nums text-muted-foreground">{t.phone}</td>
@@ -281,6 +284,8 @@ function TargetsPage() {
             )}
           </tbody>
         </table>
+
+        <Pagination {...pageProps} />
       </section>
     </AppShell>
   );

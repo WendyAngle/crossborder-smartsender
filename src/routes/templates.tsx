@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { AppShell, Drawer, StatCard } from "@/components/app-shell";
+import { Pagination, usePagination } from "@/components/pagination";
 import {
   VARIABLES,
   countCredits,
@@ -35,6 +36,7 @@ function TemplatesPage() {
   const areaRef = useRef<HTMLTextAreaElement>(null);
 
   const open = editing !== undefined;
+  const { pageItems, props: pageProps } = usePagination(templates);
 
   function openDrawer(tpl: Template | null) {
     setName(tpl?.name ?? "");
@@ -170,7 +172,7 @@ function TemplatesPage() {
         </div>
 
         <div className="divide-y divide-border">
-          {templates.map((t) => (
+          {pageItems.map((t) => (
             <div key={t.id} className="flex items-start gap-4 px-5 py-4 hover:bg-background/70">
               <div className="min-w-0 flex-1">
                 <div className="font-medium">{t.name}</div>
@@ -208,6 +210,8 @@ function TemplatesPage() {
             </div>
           )}
         </div>
+
+        <Pagination {...pageProps} unit="个" />
       </section>
     </AppShell>
   );
