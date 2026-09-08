@@ -32,6 +32,7 @@ function TargetsPage() {
   const [phone, setPhone] = useState("");
   const [region, setRegion] = useState("");
   const [bulk, setBulk] = useState("");
+  const [fileName, setFileName] = useState("");
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -58,6 +59,32 @@ function TargetsPage() {
     setMode({ kind: "none" });
   }
 
+  function downloadTemplate() {
+    const rows = [
+      ["姓名", "手机号", "国家/地区"],
+      ["Sophia Miller", "+1 305 555 0182", "美国"],
+      ["Carlos Mendez", "+34 600 555 019", "西班牙"],
+      ["Emma Wilson", "+44 7700 555 014", "英国"],
+      ["李静", "+86 138 0000 0777", "中国"],
+    ];
+    const csv = "\uFEFF" + rows.map((r) => r.join(",")).join("\r\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "目标导入模板.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function onFile(file: File | undefined) {
+    if (!file) return;
+    const text = await file.text();
+    const lines = text.replace(/^\uFEFF/, "").split(/\r?\n/);
+    const body = lines.filter((l) => l.trim() && !/^\s*姓名/.test(l));
+    setFileName(file.name);
+    setBulk(body.join("\n"));
+  }
+
   function saveBulk() {
     const rows = bulk
       .split("\n")
@@ -67,6 +94,7 @@ function TargetsPage() {
     if (rows.length === 0) return;
     importTargets(rows);
     setBulk("");
+    setFileName("");
     setMode({ kind: "none" });
   }
 
@@ -135,9 +163,38 @@ function TargetsPage() {
               </>
             }
           >
+            <div className="rounded-lg border border-border bg-background/60 p-3">
+              <p className="text-xs font-medium">第 1 步 · 下载模板</p>
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                模板含三列：姓名、手机号（含国际区号）、国家/地区。
+              </p>
+              <button className="btn-ghost mt-2 px-3 py-1.5 text-xs" onClick={downloadTemplate}>
+                下载导入模板 (.csv)
+              </button>
+            </div>
+
+            <div className="rounded-lg border border-border bg-background/60 p-3">
+              <p className="text-xs font-medium">第 2 步 · 上传文件</p>
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                支持 .csv / .txt，首行表头会自动忽略。
+              </p>
+              <label className="btn-ghost mt-2 inline-flex cursor-pointer px-3 py-1.5 text-xs">
+                选择文件
+                <input
+                  type="file"
+                  accept=".csv,.txt,text/csv,text/plain"
+                  className="hidden"
+                  onChange={(e) => void onFile(e.target.files?.[0])}
+                />
+              </label>
+              {fileName && (
+                <span className="ml-2 text-[11px] text-muted-foreground">已选择 {fileName}</span>
+              )}
+            </div>
+
             <div>
               <label className="text-xs font-medium text-muted-foreground">
-                粘贴名单（姓名, 手机号, 国家/地区）
+                第 3 步 · 核对名单（姓名, 手机号, 国家/地区）
               </label>
               <textarea
                 className="field mt-1.5 min-h-64 resize-y font-mono text-xs"
@@ -146,7 +203,9 @@ function TargetsPage() {
                 placeholder={"Sophia Miller, +1 305 555 0182, 美国\nCarlos Mendez, +34 600 555 019, 西班牙"}
               />
               <p className="mt-2 text-[11px] text-muted-foreground">
-                支持逗号、制表符分隔，可直接从表格复制粘贴。
+                支持逗号、制表符分隔，可直接从表格复制粘贴。已识别{" "}
+                {bulk.split("\n").filter((l) => l.split(/[,\t，]/).filter((c) => c.trim()).length >= 2).length}{" "}
+                条有效数据。
               </p>
             </div>
           </Drawer>
