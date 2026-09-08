@@ -162,9 +162,38 @@ function TargetsPage() {
               </>
             }
           >
+            <div className="rounded-lg border border-border bg-background/60 p-3">
+              <p className="text-xs font-medium">第 1 步 · 下载模板</p>
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                模板含三列：姓名、手机号（含国际区号）、国家/地区。
+              </p>
+              <button className="btn-ghost mt-2 px-3 py-1.5 text-xs" onClick={downloadTemplate}>
+                下载导入模板 (.csv)
+              </button>
+            </div>
+
+            <div className="rounded-lg border border-border bg-background/60 p-3">
+              <p className="text-xs font-medium">第 2 步 · 上传文件</p>
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                支持 .csv / .txt，首行表头会自动忽略。
+              </p>
+              <label className="btn-ghost mt-2 inline-flex cursor-pointer px-3 py-1.5 text-xs">
+                选择文件
+                <input
+                  type="file"
+                  accept=".csv,.txt,text/csv,text/plain"
+                  className="hidden"
+                  onChange={(e) => void onFile(e.target.files?.[0])}
+                />
+              </label>
+              {fileName && (
+                <span className="ml-2 text-[11px] text-muted-foreground">已选择 {fileName}</span>
+              )}
+            </div>
+
             <div>
               <label className="text-xs font-medium text-muted-foreground">
-                粘贴名单（姓名, 手机号, 国家/地区）
+                第 3 步 · 核对名单（姓名, 手机号, 国家/地区）
               </label>
               <textarea
                 className="field mt-1.5 min-h-64 resize-y font-mono text-xs"
