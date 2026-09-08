@@ -107,6 +107,30 @@ function HoverBubble({
   );
 }
 
+const REGION_LANGUAGE: Record<string, string> = {
+  美国: "英语",
+  英国: "英语",
+  德国: "德语",
+  日本: "日语",
+  韩国: "韩语",
+  西班牙: "西班牙语",
+  阿联酋: "阿拉伯语",
+  中国: "中文",
+  法国: "法语",
+  意大利: "意大利语",
+  印度: "印地语",
+  澳大利亚: "英语",
+  马来西亚: "马来语",
+  越南: "越南语",
+  新加坡: "英语",
+  俄罗斯: "俄语",
+  巴西: "葡萄牙语",
+};
+
+function regionLanguage(region: string) {
+  return REGION_LANGUAGE[region] ?? `${region}语言`;
+}
+
 function DetailsPage() {
   const { records, targetById, sendReply, threadRecords } = useSmsStore();
   const [query, setQuery] = useState("");
@@ -259,7 +283,9 @@ function DetailsPage() {
                     void doTranslate(replyText, region);
                   }}
                 >
-                  {translating ? "翻译中…" : `翻译为${targetById(replyTo.targetId)?.region ?? ""}语言`}
+                  {translating
+                    ? "翻译中…"
+                    : `翻译为${regionLanguage(targetById(replyTo.targetId)?.region ?? "")}`}
                 </button>
               </div>
               <textarea
