@@ -31,16 +31,31 @@ export type Task = {
 
 export type SmsStatus = "sending" | "delivered" | "failed";
 
+/** campaign = 任务群发首条；reply = 我方针对客户回复的人工跟进（同一会话内的新一条短信） */
+export type SmsKind = "campaign" | "reply";
+
 export type SmsRecord = {
   id: string;
   targetId: string;
+  /** 同一目标的一次对话，群发首条与后续人工回复共用同一个 threadId */
+  threadId: string;
+  kind: SmsKind;
+  /** 会话内序号，从 1 开始 */
+  seq: number;
   status: SmsStatus;
+  /** 实际发送内容（目标所在国家/地区语言） */
   content: string;
+  /** 中文译文，仅当发送内容非中文时提供 */
+  contentZh: string | null;
   credits: number;
   createdAt: string;
   succeededAt: string | null;
   failReason: string | null;
+  /** 对方回复原文 */
   reply: string | null;
+  /** 对方回复中文译文 */
+  replyZh: string | null;
+  replyAt: string | null;
 };
 
 export const VARIABLES = [
@@ -160,46 +175,124 @@ const initialRecords: SmsRecord[] = [
   {
     id: "r1",
     targetId: "t1",
+    threadId: "th1",
+    kind: "campaign",
+    seq: 1,
     status: "delivered",
-    content: renderTemplate(initialTemplates[2]!.content, "Sophia"),
+    content:
+      "[AirHui] Hi Sophia, the AirMax cross-border line you follow is back in stock. Check availability: airhui.shop",
+    contentZh: "【信汇】Sophia，您关注的 AirMax 跨境直邮专线已到货，前往 airhui.shop 查看库存。",
     credits: 12,
     createdAt: ts(96),
     succeededAt: ts(95),
     failReason: null,
-    reply: "收到，能发一下 AirMax 42 码的库存和运费吗？",
+    reply: "Got it. Could you send stock and shipping cost for AirMax US 9?",
+    replyZh: "收到，能发一下 AirMax 美码 9 的库存和运费吗？",
+    replyAt: ts(90),
+  },
+  {
+    id: "r1b",
+    targetId: "t1",
+    threadId: "th1",
+    kind: "reply",
+    seq: 2,
+    status: "delivered",
+    content: "[AirHui] US 9 in stock: 26 pairs. Flat shipping $6.9, delivery 5-7 days. Order: airhui.shop/promo",
+    contentZh: "【信汇】美码 9 现货 26 双，运费统一 6.9 美元，5-7 天到达。下单：airhui.shop/promo",
+    credits: 12,
+    createdAt: ts(86),
+    succeededAt: ts(85),
+    failReason: null,
+    reply: "Perfect, I just placed the order. Thanks!",
+    replyZh: "很好，我已经下单了，谢谢！",
+    replyAt: ts(70),
   },
   {
     id: "r2",
     targetId: "t2",
+    threadId: "th2",
+    kind: "campaign",
+    seq: 1,
     status: "sending",
-    content: renderTemplate(initialTemplates[1]!.content, "Carlos"),
+    content: "[AirHui] Carlos, envío directo transfronterizo al 50% por tiempo limitado. Más info: airhui.shop/promo",
+    contentZh: "【信汇】Carlos，跨境直邮 5 折限时开启，详情见 airhui.shop/promo",
     credits: 15,
     createdAt: ts(80),
     succeededAt: null,
     failReason: null,
     reply: null,
+    replyZh: null,
+    replyAt: null,
   },
   {
     id: "r3",
     targetId: "t3",
+    threadId: "th3",
+    kind: "campaign",
+    seq: 1,
     status: "delivered",
-    content: renderTemplate(initialTemplates[2]!.content, "Emma"),
+    content: "[AirHui] Emma, the AirMax line you watched is back in stock. View stock at airhui.shop",
+    contentZh: "【信汇】Emma，您关注的 AirMax 跨境直邮专线已到货，前往 airhui.shop 查看库存。",
     credits: 12,
     createdAt: ts(72),
     succeededAt: ts(71),
     failReason: null,
     reply: null,
+    replyZh: null,
+    replyAt: null,
+  },
+  {
+    id: "r4",
+    targetId: "t9",
+    threadId: "th4",
+    kind: "campaign",
+    seq: 1,
+    status: "delivered",
+    content:
+      "【信匯】Yukiさん、初回ご注文が30元OFF。AirMax越境直送便を期間限定で公開中、airhui.shop へ →",
+    contentZh: "【信汇】Yuki，首单立减 30 元，AirMax 跨境直邮专线限时开启，点击 airhui.shop 抢购 →",
+    credits: 12,
+    createdAt: ts(64),
+    succeededAt: ts(63),
+    failReason: null,
+    reply: "クーポンは会員登録なしでも使えますか？",
+    replyZh: "优惠券不注册会员也能使用吗？",
+    replyAt: ts(58),
+  },
+  {
+    id: "r6",
+    targetId: "t6",
+    threadId: "th5",
+    kind: "campaign",
+    seq: 1,
+    status: "delivered",
+    content:
+      "[AirHui] Hans, Ihr Paket verzögert sich in der Zollabwicklung. Aktueller Status: airhui.shop",
+    contentZh: "【信汇】Hans，您的包裹因清关延误，最新进度请查询 airhui.shop。",
+    credits: 12,
+    createdAt: ts(56),
+    succeededAt: ts(55),
+    failReason: null,
+    reply: null,
+    replyZh: null,
+    replyAt: null,
   },
   {
     id: "r5",
     targetId: "t5",
+    threadId: "th6",
+    kind: "campaign",
+    seq: 1,
     status: "delivered",
-    content: renderTemplate(initialTemplates[0]!.content, "李静"),
+    content: "【信汇】李静，首单立减 30 元，AirMax 跨境直邮专线限时开启，点击 airhui.shop 抢购 →",
+    contentZh: null,
     credits: 12,
     createdAt: ts(50),
     succeededAt: ts(49),
     failReason: null,
     reply: "好的，首单立减怎么使用？麻烦发个链接。",
+    replyZh: null,
+    replyAt: ts(44),
   },
 ];
 
@@ -220,6 +313,7 @@ type Store = State & {
   removeTemplate: (id: string) => void;
   createTask: (input: { name: string; targetIds: string[]; templateId: string }) => void;
   sendReply: (recordId: string, text: string) => void;
+  threadRecords: (threadId: string) => SmsRecord[];
   targetById: (id: string) => Target | undefined;
   templateById: (id: string) => Template | undefined;
 };
@@ -227,7 +321,7 @@ type Store = State & {
 export type ImportResult = { added: number; invalid: number; duplicated: number };
 
 const StoreContext = createContext<Store | null>(null);
-const KEY = "sms-console-state-v2";
+const KEY = "sms-console-state-v3";
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 
@@ -331,13 +425,19 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
           return {
             id: uid(),
             targetId: tid,
+            threadId: uid(),
+            kind: "campaign",
+            seq: 1,
             status: "sending",
             content,
+            contentZh: null,
             credits: countCredits(tpl.content),
             createdAt: now,
             succeededAt: null,
             failReason: null,
             reply: null,
+            replyZh: null,
+            replyAt: null,
           };
         });
         return { ...s, tasks: [task, ...s.tasks], records: [...records, ...s.records] };
@@ -346,15 +446,33 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  /** 我方跟进回复：在同一会话内新增一条外发短信记录，不覆盖原记录 */
   const sendReply = useCallback((recordId: string, text: string) => {
-    setState((s) => ({
-      ...s,
-      records: s.records.map((r) =>
-        r.id === recordId
-          ? { ...r, content: `${r.content}\n[我方回复] ${text}`, reply: r.reply }
-          : r,
-      ),
-    }));
+    setState((s) => {
+      const src = s.records.find((r) => r.id === recordId);
+      if (!src) return s;
+      const seq =
+        Math.max(...s.records.filter((r) => r.threadId === src.threadId).map((r) => r.seq)) + 1;
+      const now = new Date().toISOString();
+      const followUp: SmsRecord = {
+        id: uid(),
+        targetId: src.targetId,
+        threadId: src.threadId,
+        kind: "reply",
+        seq,
+        status: "sending",
+        content: text,
+        contentZh: null,
+        credits: countCredits(text),
+        createdAt: now,
+        succeededAt: null,
+        failReason: null,
+        reply: null,
+        replyZh: null,
+        replyAt: null,
+      };
+      return { ...s, records: [followUp, ...s.records] };
+    });
   }, []);
 
   const value = useMemo<Store>(
@@ -369,6 +487,8 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
       removeTemplate,
       createTask,
       sendReply,
+      threadRecords: (threadId) =>
+        state.records.filter((r) => r.threadId === threadId).sort((a, b) => a.seq - b.seq),
       targetById: (id) => state.targets.find((t) => t.id === id),
       templateById: (id) => state.templates.find((t) => t.id === id),
     }),
