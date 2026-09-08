@@ -29,7 +29,24 @@ export type Task = {
   createdAt: string;
 };
 
-export type SmsStatus = "sending" | "delivered" | "failed";
+/**
+ * sending  = 提交网关中
+ * sent     = 已发送（网关提交成功，未收到运营商送达回执）
+ * delivered= 已送达（收到终端送达回执）
+ * failed   = 发送/送达失败
+ */
+export type SmsStatus = "sending" | "sent" | "delivered" | "failed";
+
+/** 目标维度的最近触达状态，由短信明细推导，不作为目标的静态字段存储 */
+export type ReachStatus = "untouched" | "sending" | "sent" | "delivered" | "failed";
+
+export type Reach = {
+  status: ReachStatus;
+  lastAt: string | null;
+  failReason: string | null;
+  replied: boolean;
+  count: number;
+};
 
 /** campaign = 任务群发首条；reply = 我方针对客户回复的人工跟进（同一会话内的新一条短信） */
 export type SmsKind = "campaign" | "reply";
