@@ -218,7 +218,7 @@ function TasksPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {tasks.map((task) => {
+            {pageItems.map((task) => {
               const tpl = templateById(task.templateId);
               return (
                 <tr key={task.id} className="transition-colors hover:bg-background/70">
@@ -245,6 +245,8 @@ function TasksPage() {
             )}
           </tbody>
         </table>
+
+        <Pagination {...pageProps} />
       </section>
     </AppShell>
   );
