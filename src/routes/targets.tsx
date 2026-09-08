@@ -32,6 +32,7 @@ function TargetsPage() {
   const [phone, setPhone] = useState("");
   const [region, setRegion] = useState("");
   const [bulk, setBulk] = useState("");
+  const [fileName, setFileName] = useState("");
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -56,6 +57,32 @@ function TargetsPage() {
     if (mode.kind === "single" && mode.target) updateTarget(mode.target.id, payload);
     else addTarget(payload);
     setMode({ kind: "none" });
+  }
+
+  function downloadTemplate() {
+    const rows = [
+      ["姓名", "手机号", "国家/地区"],
+      ["Sophia Miller", "+1 305 555 0182", "美国"],
+      ["Carlos Mendez", "+34 600 555 019", "西班牙"],
+      ["Emma Wilson", "+44 7700 555 014", "英国"],
+      ["李静", "+86 138 0000 0777", "中国"],
+    ];
+    const csv = "\uFEFF" + rows.map((r) => r.join(",")).join("\r\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "目标导入模板.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function onFile(file: File | undefined) {
+    if (!file) return;
+    const text = await file.text();
+    const lines = text.replace(/^\uFEFF/, "").split(/\r?\n/);
+    const body = lines.filter((l) => l.trim() && !/^\s*姓名/.test(l));
+    setFileName(file.name);
+    setBulk(body.join("\n"));
   }
 
   function saveBulk() {
