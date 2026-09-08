@@ -277,19 +277,39 @@ function DetailsPage() {
             <tbody className="divide-y divide-border">
               {pageItems.map((r) => {
                 const t = targetById(r.targetId);
+                const isFollowUp = r.kind === "reply";
                 return (
-                  <tr key={r.id} className="transition-colors hover:bg-background/70">
+                  <tr
+                    key={r.id}
+                    className={`transition-colors hover:bg-background/70 ${isFollowUp ? "bg-background/40" : ""}`}
+                  >
                     <td className="px-5 py-3">
-                      <div className="font-medium">{t?.name ?? "已删除目标"}</div>
-                      <div className="text-xs text-muted-foreground">
+                      <div className={`flex items-center gap-1.5 ${isFollowUp ? "pl-4" : ""}`}>
+                        {isFollowUp && <span className="text-muted-foreground">↳</span>}
+                        <span className="font-medium">{t?.name ?? "已删除目标"}</span>
+                        <span
+                          className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${
+                            isFollowUp
+                              ? "bg-accent text-accent-foreground"
+                              : "bg-muted text-muted-foreground"
+                          }`}
+                        >
+                          {isFollowUp ? `人工回复 #${r.seq}` : "任务群发"}
+                        </span>
+                      </div>
+                      <div className={`text-xs text-muted-foreground ${isFollowUp ? "pl-6" : ""}`}>
                         {t ? `${t.phone} · ${t.region}` : "—"}
                       </div>
                     </td>
                     <td className="px-3 py-3">
                       <StatusPill status={r.status} />
                     </td>
-                    <td className="max-w-40 truncate px-3 py-3 text-muted-foreground" title={r.content}>
-                      {r.content}
+                    <td className="px-3 py-3 text-muted-foreground">
+                      <HoverBubble label="实际发送内容" original={r.content} translated={r.contentZh}>
+                        <span className="block max-w-40 truncate underline decoration-dotted decoration-border underline-offset-4">
+                          {r.content}
+                        </span>
+                      </HoverBubble>
                     </td>
                     <td className="px-3 py-3 tabular-nums text-muted-foreground">{r.credits}</td>
                     <td className="whitespace-nowrap px-3 py-3 text-xs tabular-nums text-muted-foreground">
@@ -301,12 +321,15 @@ function DetailsPage() {
                     <td className="px-3 py-3 text-xs text-destructive">{r.failReason ?? ""}</td>
                     <td className="px-3 py-3">
                       {r.reply ? (
-                        <span className="group relative inline-flex items-center gap-1 text-xs font-medium">
-                          是
-                          <span className="absolute bottom-full left-1/2 z-10 mb-2 hidden w-48 -translate-x-1/2 rounded-lg bg-ink p-2.5 text-[11px] leading-snug text-ink-foreground/90 shadow-lg group-hover:block">
-                            {r.reply}
+                        <HoverBubble
+                          label="对方回复原文"
+                          original={r.reply}
+                          translated={r.replyZh}
+                        >
+                          <span className="text-xs font-medium underline decoration-dotted decoration-border underline-offset-4">
+                            是
                           </span>
-                        </span>
+                        </HoverBubble>
                       ) : (
                         <span className="text-xs text-muted-foreground">否</span>
                       )}
@@ -321,6 +344,16 @@ function DetailsPage() {
                           }}
                         >
                           回复
+                        </button>
+                      ) : r.seq > 1 || records.some((x) => x.threadId === r.threadId && x.seq > 1) ? (
+                        <button
+                          className="btn-ghost px-3 py-1.5 text-xs"
+                          onClick={() => {
+                            setReplyTo(r);
+                            setReplyText("");
+                          }}
+                        >
+                          查看会话
                         </button>
                       ) : (
                         <span className="text-xs text-muted-foreground">—</span>
