@@ -126,11 +126,8 @@ export function AppShell({
           <h1 className="font-display text-lg font-semibold tracking-tight">{title}</h1>
           <span className="text-xs text-muted-foreground">{subtitle}</span>
           <div className="ml-auto flex items-center gap-3">
-            <div className="flex items-center gap-2 border-l border-border pl-3">
-              <div className="grid size-8 place-items-center rounded-full bg-accent font-display text-sm font-semibold text-accent-foreground">
-                李
-              </div>
-              <span className="text-sm font-medium">李经理</span>
+            <div className="border-l border-border pl-3">
+              <AccountMenu />
             </div>
           </div>
         </header>
