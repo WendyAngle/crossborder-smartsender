@@ -110,15 +110,19 @@ export function Drawer({
   onClose,
   footer,
   children,
+  width = "w-[400px]",
 }: {
   title: string;
   hint?: string | undefined;
   onClose: () => void;
   footer: ReactNode;
   children: ReactNode;
+  width?: string;
 }) {
   return (
-    <aside className="drawer-in absolute inset-y-0 right-0 flex w-[400px] max-w-full flex-col border-l border-border bg-card shadow-2xl">
+    <aside
+      className={`drawer-in absolute inset-y-0 right-0 flex ${width} max-w-full flex-col border-l border-border bg-card shadow-2xl`}
+    >
       <div className="flex h-14 items-center gap-2 border-b border-border px-5">
         <h2 className="font-display text-[15px] font-semibold">{title}</h2>
         {hint && <span className="text-[11px] text-muted-foreground">{hint}</span>}
