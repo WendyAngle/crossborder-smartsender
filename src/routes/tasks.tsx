@@ -28,6 +28,156 @@ export const Route = createFileRoute("/tasks")({
   component: TasksPage,
 });
 
+function TargetPicker({
+  available,
+  selected,
+  setSelected,
+}: {
+  available: Target[];
+  selected: string[];
+  setSelected: (next: string[]) => void;
+}) {
+  const [query, setQuery] = useState("");
+  const [region, setRegion] = useState("all");
+  const [onlySelected, setOnlySelected] = useState(false);
+
+  const regions = useMemo(
+    () => Array.from(new Set(available.map((t) => t.region))).sort(),
+    [available],
+  );
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return available.filter((t) => {
+      if (region !== "all" && t.region !== region) return false;
+      if (onlySelected && !selected.includes(t.id)) return false;
+      if (!q) return true;
+      return [t.name, t.phone, t.region].some((v) => v.toLowerCase().includes(q));
+    });
+  }, [available, query, region, onlySelected, selected]);
+
+  const { pageItems, props: pageProps } = usePagination(filtered, 8);
+  const pageIds = pageItems.map((t) => t.id);
+  const pageAllOn = pageIds.length > 0 && pageIds.every((id) => selected.includes(id));
+
+  function toggle(id: string) {
+    setSelected(selected.includes(id) ? selected.filter((x) => x !== id) : [...selected, id]);
+  }
+
+  function togglePage() {
+    if (pageAllOn) setSelected(selected.filter((id) => !pageIds.includes(id)));
+    else setSelected(Array.from(new Set([...selected, ...pageIds])));
+  }
+
+  function selectAllFiltered() {
+    setSelected(Array.from(new Set([...selected, ...filtered.map((t) => t.id)])));
+  }
+
+  return (
+    <div>
+      <div className="flex items-baseline justify-between">
+        <label className="text-xs font-medium text-muted-foreground">选择目标</label>
+        <span className="text-[11px] text-muted-foreground">
+          已选 <span className="font-semibold text-primary">{selected.length}</span> / 可选{" "}
+          {available.length}
+        </span>
+      </div>
+      <p className="mt-1 text-[11px] text-muted-foreground">
+        已成功发送与发送中的目标已自动过滤；可搜索、按地区筛选后批量勾选。
+      </p>
+
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <input
+          className="field min-w-40 flex-1 py-1.5 text-xs"
+          placeholder="搜索姓名 / 手机号 / 地区"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+        <select
+          className="field w-28 py-1.5 text-xs"
+          value={region}
+          onChange={(e) => setRegion(e.target.value)}
+        >
+          <option value="all">全部地区</option>
+          {regions.map((r) => (
+            <option key={r} value={r}>
+              {r}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px]">
+        <label className="flex cursor-pointer items-center gap-1.5 text-muted-foreground">
+          <input
+            type="checkbox"
+            className="h-3.5 w-3.5 accent-primary"
+            checked={pageAllOn}
+            onChange={togglePage}
+          />
+          全选本页
+        </label>
+        <button
+          className="font-medium text-primary hover:underline disabled:opacity-40"
+          disabled={filtered.length === 0}
+          onClick={selectAllFiltered}
+        >
+          选中当前筛选结果（{filtered.length}）
+        </button>
+        <button
+          className="font-medium text-muted-foreground hover:underline disabled:opacity-40"
+          disabled={selected.length === 0}
+          onClick={() => setSelected([])}
+        >
+          清空已选
+        </button>
+        <button
+          className={`ml-auto rounded-md px-2 py-0.5 font-medium ${
+            onlySelected ? "bg-primary text-primary-foreground" : "bg-accent text-accent-foreground"
+          }`}
+          onClick={() => setOnlySelected((v) => !v)}
+        >
+          {onlySelected ? "查看全部" : `只看已选（${selected.length}）`}
+        </button>
+      </div>
+
+      <div className="mt-2 overflow-hidden rounded-xl border border-border">
+        <div className="divide-y divide-border">
+          {pageItems.map((t) => {
+            const on = selected.includes(t.id);
+            return (
+              <label
+                key={t.id}
+                className={`flex cursor-pointer items-center gap-3 px-3 py-2 text-xs transition-colors ${
+                  on ? "bg-primary/10" : "hover:bg-background"
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={on}
+                  onChange={() => toggle(t.id)}
+                  className="h-3.5 w-3.5 accent-primary"
+                />
+                <span className="w-24 shrink-0 truncate font-medium">{t.name}</span>
+                <span className="tabular-nums text-muted-foreground">{t.phone}</span>
+                <span className="ml-auto shrink-0 rounded-md bg-background px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                  {t.region}
+                </span>
+              </label>
+            );
+          })}
+          {filtered.length === 0 && (
+            <p className="px-3 py-8 text-center text-xs text-muted-foreground">
+              没有符合条件的目标，试试调整搜索或地区筛选
+            </p>
+          )}
+        </div>
+        {filtered.length > 0 && <Pagination {...pageProps} />}
+      </div>
+    </div>
+  );
+}
+
 function TasksPage() {
   const { tasks, targets, templates, records, createTask, templateById } = useSmsStore();
   const [open, setOpen] = useState(false);
