@@ -49,9 +49,8 @@ function AccountMenu() {
 
 const NAV = [
   { to: "/targets", label: "目标管理" },
-  { to: "/tasks", label: "任务管理" },
   { to: "/tasks2", label: "任务管理2" },
-  { to: "/leads", label: "商机管理" },
+  { to: "/leads", label: "会话跟进" },
   { to: "/", label: "短信明细" },
   { to: "/templates", label: "短信模板" },
 ] as const;
