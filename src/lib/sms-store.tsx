@@ -124,6 +124,8 @@ export type SmsRecord = {
   /** 对方回复中文译文 */
   replyZh: string | null;
   replyAt: string | null;
+  /** 对方回复是否已读；有回复但未标记时视为未读 */
+  replyRead?: boolean;
 };
 
 export const VARIABLES = [
@@ -283,6 +285,7 @@ const initialRecords: SmsRecord[] = [
     reply: "Got it. Could you send stock and shipping cost for AirMax US 9?",
     replyZh: "收到，能发一下 AirMax 美码 9 的库存和运费吗？",
     replyAt: ts(90),
+    replyRead: true,
   },
   {
     id: "r1b",
@@ -399,6 +402,7 @@ const initialRecords: SmsRecord[] = [
     reply: "好的，首单立减怎么使用？麻烦发个链接。",
     replyZh: null,
     replyAt: ts(44),
+    replyRead: true,
   },
   {
     id: "r7",
