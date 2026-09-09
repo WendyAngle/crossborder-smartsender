@@ -56,17 +56,9 @@ function TemplatesPage() {
   // 选中项限定在当前筛选结果内，避免对看不见的数据误操作
   const visibleIds = filtered.map((t) => t.id);
   const selected = selectedIds.filter((id) => visibleIds.includes(id));
-  const pageAllSelected = pageItems.length > 0 && pageItems.every((t) => selected.includes(t.id));
 
   function toggleOne(id: string) {
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
-  }
-
-  function togglePage(checked: boolean) {
-    const ids = pageItems.map((t) => t.id);
-    setSelectedIds((prev) =>
-      checked ? [...new Set([...prev, ...ids])] : prev.filter((x) => !ids.includes(x)),
-    );
   }
 
 
@@ -250,13 +242,7 @@ function TemplatesPage() {
           <div className="min-w-[720px]">
             {/* 表头 */}
             <div className="grid grid-cols-[44px_1.2fr_2fr_0.9fr_140px] items-center border-b border-border bg-background/60 px-5 py-2.5 text-xs font-medium text-muted-foreground">
-              <input
-                type="checkbox"
-                className="size-3.5 accent-[hsl(var(--primary))]"
-                aria-label="全选当前页"
-                checked={pageAllSelected}
-                onChange={(e) => togglePage(e.target.checked)}
-              />
+              <span />
               <span>模板名称</span>
               <span>模板内容</span>
               <span>变量</span>
