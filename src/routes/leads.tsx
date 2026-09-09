@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { regionLanguage } from "@/components/reply-drawer";
 import { SmsPoster } from "@/components/sms-image";
@@ -120,12 +120,12 @@ function LeadsPage() {
 
   const active = filtered.find((l) => l.threadId === activeId) ?? filtered[0] ?? null;
 
-  useEffect(() => {
-    if (!active) return;
-    for (const r of active.records) {
+  function openLead(lead: Lead) {
+    setActiveId(lead.threadId);
+    for (const r of lead.records) {
       if (r.reply && !r.replyRead) markReplyRead(r.id);
     }
-  }, [active, markReplyRead]);
+  }
 
   const totalUnread = leads.reduce((s, l) => s + l.unread, 0);
   const pendingCount = leads.filter((l) => l.stage === "pending").length;
@@ -171,7 +171,7 @@ function LeadsPage() {
               return (
                 <button
                   key={l.threadId}
-                  onClick={() => setActiveId(l.threadId)}
+                  onClick={() => openLead(l)}
                   className={`flex w-full gap-3 border-b border-border/60 px-3.5 py-3 text-left transition ${
                     isActive ? "bg-accent/60" : "hover:bg-background"
                   }`}
