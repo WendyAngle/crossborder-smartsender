@@ -273,9 +273,9 @@ function LeadChat({
           </div>
         </div>
         <span
-          className={`ml-auto rounded-md px-2 py-1 text-[11px] ${STAGE_CLASS[lead.stage]}`}
+          className={`ml-auto rounded-md px-2 py-1 text-[11px] ${STATUS_CLASS[lead.status]}`}
         >
-          {STAGE_LABEL[lead.stage]}
+          {STATUS_LABEL[lead.status]}
         </span>
       </div>
 
