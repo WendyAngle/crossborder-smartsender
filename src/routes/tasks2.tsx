@@ -333,15 +333,72 @@ function TasksPage() {
               <select
                 className="field mt-1.5"
                 value={templateId}
-                onChange={(e) => setTemplateId(e.target.value)}
+                onChange={(e) => pickTemplate(e.target.value)}
               >
-                {templates.filter((t) => t.enabled).map((t) => (
+                {enabledTemplates.map((t) => (
                   <option key={t.id} value={t.id}>
                     {t.name}
                   </option>
                 ))}
               </select>
+              {template && (
+                <p className="mt-1 whitespace-pre-wrap rounded-lg bg-background px-2.5 py-2 text-[11px] leading-relaxed text-muted-foreground">
+                  {template.content}
+                </p>
+              )}
             </div>
+
+            {usedVars.length > 0 && (
+              <div>
+                <div className="flex items-baseline justify-between">
+                  <label className="text-xs font-medium text-muted-foreground">变量取值</label>
+                  <span className="text-[11px] text-muted-foreground">
+                    共 {usedVars.length} 个变量 · 需填写 {needVars.length} 个
+                  </span>
+                </div>
+                <div className="mt-1.5 space-y-2 rounded-xl border border-border px-3 py-3">
+                  {usedVars.map((v) => {
+                    const auto = !needVars.some((n) => n.token === v.token);
+                    const value = varValues[v.token] ?? "";
+                    const missing = !auto && varError && !value.trim();
+                    return (
+                      <div key={v.token} className="flex items-center gap-2">
+                        <span className="w-20 shrink-0 text-[11px] font-medium text-foreground/80">
+                          {v.label}
+                        </span>
+                        {auto ? (
+                          <span className="flex-1 rounded-lg bg-background px-2.5 py-1.5 text-[11px] text-muted-foreground">
+                            按每个目标的姓名自动填充，无需填写
+                          </span>
+                        ) : (
+                          <input
+                            className={`field flex-1 py-1.5 text-xs ${
+                              missing ? "border-red-500" : ""
+                            }`}
+                            placeholder={`请输入${v.label}`}
+                            value={value}
+                            onChange={(e) => {
+                              setVarValues((prev) => ({ ...prev, [v.token]: e.target.value }));
+                              setVarError(false);
+                            }}
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                <p
+                  className={`mt-1 text-[11px] ${
+                    varError && missingVars.length > 0 ? "text-red-600" : "text-muted-foreground"
+                  }`}
+                >
+                  {varError && missingVars.length > 0
+                    ? `请先填写：${missingVars.map((v) => v.label).join("、")}`
+                    : "变量取值对本任务全部目标统一生效，发送后不再变更"}
+                </p>
+              </div>
+            )}
+
 
             <div>
               <label className="text-xs font-medium text-muted-foreground">发信内容类型</label>
