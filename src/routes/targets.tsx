@@ -293,8 +293,9 @@ function TargetsPage() {
       <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard label="目标总数" value={targets.length.toLocaleString()} />
         <StatCard label="覆盖地区" value={String(regions)} tone="primary" />
-        <StatCard label="未触达" value={String(untouched)} />
-        <StatCard label="已送达" value={String(deliveredCount)} />
+        <StatCard label="启用中" value={String(enabledCount)} />
+        <StatCard label="已禁用" value={String(disabledCount)} />
+
       </div>
 
       <section className="panel overflow-hidden">
