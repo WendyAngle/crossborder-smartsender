@@ -217,13 +217,13 @@ function TasksPage() {
     setSelected([]);
     setTemplateId(templates[0]?.id ?? "");
     setMsgType("text");
+    setFollowUp(true);
     setOpen(true);
   }
 
-
   function submit() {
     if (!taskName.trim() || selected.length === 0 || !templateId) return;
-    createTask({ name: taskName.trim(), targetIds: selected, templateId, msgType });
+    createTask({ name: taskName.trim(), targetIds: selected, templateId, msgType, followUp });
     setOpen(false);
   }
 
