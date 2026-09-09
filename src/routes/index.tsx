@@ -435,8 +435,7 @@ function DetailsPage() {
                     }}
                   >
                     <td className="px-5 py-3">
-                      <div className={`flex items-center gap-1.5 ${isFollowUp ? "pl-4" : ""}`}>
-                        {isFollowUp && <span className="text-muted-foreground">↳</span>}
+                      <div className="flex items-center gap-1.5">
                         <span className="font-medium">{t?.name ?? "已删除目标"}</span>
                         <span
                           className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${
