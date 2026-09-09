@@ -184,21 +184,9 @@ function DetailsPage() {
         (r.contentZh ?? "").toLowerCase().includes(q)
       );
     });
-    // 同一会话的记录聚在一起：会话按最新时间倒序，会话内按序号正序
-    const latest = new Map<string, number>();
-    for (const r of list) {
-      const t = new Date(r.createdAt).getTime();
-      latest.set(r.threadId, Math.max(latest.get(r.threadId) ?? 0, t));
-    }
-    const sorted = [...list].sort(
-      (a, b) =>
-        (latest.get(b.threadId) ?? 0) - (latest.get(a.threadId) ?? 0) ||
-        a.threadId.localeCompare(b.threadId) ||
-        a.seq - b.seq,
-    );
     // 一条内容一条记录：我方外发与对方回复各自独立成行
     const rows: Row[] = [];
-    for (const r of sorted) {
+    for (const r of list) {
       rows.push({
         key: `${r.id}-out`,
         record: r,
@@ -220,7 +208,8 @@ function DetailsPage() {
         });
       }
     }
-    return rows;
+    // 全部记录统一按创建时间倒序
+    return rows.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
   }, [records, query, statusFilter, replyFilter, typeFilter, targetById]);
 
   const { pageItems, props: pageProps } = usePagination(filtered);
@@ -446,8 +435,7 @@ function DetailsPage() {
                     }}
                   >
                     <td className="px-5 py-3">
-                      <div className={`flex items-center gap-1.5 ${isFollowUp ? "pl-4" : ""}`}>
-                        {isFollowUp && <span className="text-muted-foreground">↳</span>}
+                      <div className="flex items-center gap-1.5">
                         <span className="font-medium">{t?.name ?? "已删除目标"}</span>
                         <span
                           className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${
@@ -459,7 +447,7 @@ function DetailsPage() {
                           {isFollowUp ? `人工回复 #${r.seq}` : "任务群发"}
                         </span>
                       </div>
-                      <div className={`text-xs text-muted-foreground ${isFollowUp ? "pl-6" : ""}`}>
+                      <div className="text-xs text-muted-foreground">
                         {t ? `${t.phone} · ${t.region}` : "—"}
                       </div>
                     </td>
