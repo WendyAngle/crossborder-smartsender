@@ -56,17 +56,9 @@ function TemplatesPage() {
   // 选中项限定在当前筛选结果内，避免对看不见的数据误操作
   const visibleIds = filtered.map((t) => t.id);
   const selected = selectedIds.filter((id) => visibleIds.includes(id));
-  const pageAllSelected = pageItems.length > 0 && pageItems.every((t) => selected.includes(t.id));
 
   function toggleOne(id: string) {
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
-  }
-
-  function togglePage(checked: boolean) {
-    const ids = pageItems.map((t) => t.id);
-    setSelectedIds((prev) =>
-      checked ? [...new Set([...prev, ...ids])] : prev.filter((x) => !ids.includes(x)),
-    );
   }
 
 
@@ -223,64 +215,34 @@ function TemplatesPage() {
             <button className="btn-primary px-3 py-1.5 text-xs" onClick={() => openDrawer(null)}>
               <span className="-ml-0.5 text-base leading-none">+</span> 新建模板
             </button>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2 border-b border-border bg-background/60 px-5 py-2.5 text-xs">
-          <label className="inline-flex items-center gap-2 text-muted-foreground">
-            <input
-              type="checkbox"
-              className="size-3.5 accent-[hsl(var(--primary))]"
-              aria-label="全选当前页"
-              checked={pageAllSelected}
-              onChange={(e) => togglePage(e.target.checked)}
-            />
-            全选本页
-          </label>
-          <span className="text-muted-foreground">
-            已选择 <span className="font-semibold text-foreground">{selected.length}</span> 个
-          </span>
-          <button
-            className="btn-ghost px-3 py-1.5 text-xs disabled:opacity-40"
-            disabled={selected.length === 0}
-            onClick={() => {
-              setTemplatesEnabled(selected, true);
-              setSelectedIds([]);
-            }}
-          >
-            批量启用
-          </button>
-          <button
-            className="btn-ghost px-3 py-1.5 text-xs disabled:opacity-40"
-            disabled={selected.length === 0}
-            onClick={() => {
-              setTemplatesEnabled(selected, false);
-              setSelectedIds([]);
-            }}
-          >
-            批量禁用
-          </button>
-          {selected.length > 0 && (
             <button
-              className="btn-ghost px-3 py-1.5 text-xs text-muted-foreground"
-              onClick={() => setSelectedIds([])}
+              className="btn-ghost px-3 py-1.5 text-xs disabled:opacity-40"
+              disabled={selected.length === 0}
+              onClick={() => {
+                setTemplatesEnabled(selected, true);
+                setSelectedIds([]);
+              }}
             >
-              取消选择
+              批量启用
             </button>
-          )}
+            <button
+              className="btn-ghost px-3 py-1.5 text-xs disabled:opacity-40"
+              disabled={selected.length === 0}
+              onClick={() => {
+                setTemplatesEnabled(selected, false);
+                setSelectedIds([]);
+              }}
+            >
+              批量禁用
+            </button>
+          </div>
         </div>
 
         <div className="overflow-x-auto">
           <div className="min-w-[720px]">
             {/* 表头 */}
             <div className="grid grid-cols-[44px_1.2fr_2fr_0.9fr_140px] items-center border-b border-border bg-background/60 px-5 py-2.5 text-xs font-medium text-muted-foreground">
-              <input
-                type="checkbox"
-                className="size-3.5 accent-[hsl(var(--primary))]"
-                aria-label="全选当前页"
-                checked={pageAllSelected}
-                onChange={(e) => togglePage(e.target.checked)}
-              />
+              <span />
               <span>模板名称</span>
               <span>模板内容</span>
               <span>变量</span>
