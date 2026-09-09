@@ -208,7 +208,8 @@ function DetailsPage() {
         });
       }
     }
-    return rows;
+    // 全部记录统一按创建时间倒序
+    return rows.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
   }, [records, query, statusFilter, replyFilter, typeFilter, targetById]);
 
   const { pageItems, props: pageProps } = usePagination(filtered);
