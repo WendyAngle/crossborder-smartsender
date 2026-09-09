@@ -204,7 +204,7 @@ function TasksPage() {
       .filter((r) => r.status === "delivered" || r.status === "sending")
       .map((r) => r.targetId),
   );
-  const available = targets.filter((t) => !busyIds.has(t.id));
+  const available = targets.filter((t) => t.enabled && !busyIds.has(t.id));
 
   const template = templateById(templateId);
   const previewTarget = targets.find((t) => t.id === selected[0]);
