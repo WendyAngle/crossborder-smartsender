@@ -27,10 +27,12 @@ export const Route = createFileRoute("/targets")({
 type Mode = { kind: "none" } | { kind: "single"; target?: Target | undefined } | { kind: "import" };
 
 function TargetsPage() {
-  const { targets, addTarget, updateTarget, removeTarget, importTargets, reachOf } = useSmsStore();
+  const { targets, addTarget, updateTarget, removeTarget, importTargets, setTargetsEnabled } =
+    useSmsStore();
   const [mode, setMode] = useState<Mode>({ kind: "none" });
   const [query, setQuery] = useState("");
-  const [reachFilter, setReachFilter] = useState<"all" | ReachStatus | "no-reply">("all");
+  const [enabledFilter, setEnabledFilter] = useState<"all" | "enabled" | "disabled">("all");
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -40,25 +42,33 @@ function TargetsPage() {
   const [formError, setFormError] = useState("");
   const [importInfo, setImportInfo] = useState("");
 
-  const rows = useMemo(
-    () => targets.map((t) => ({ target: t, reach: reachOf(t.id) })),
-    [targets, reachOf],
-  );
-
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return rows.filter(({ target: t, reach }) => {
-      if (reachFilter === "no-reply") {
-        if (reach.status === "untouched" || reach.replied) return false;
-      } else if (reachFilter !== "all" && reach.status !== reachFilter) {
-        return false;
-      }
+    return targets.filter((t) => {
+      if (enabledFilter === "enabled" && !t.enabled) return false;
+      if (enabledFilter === "disabled" && t.enabled) return false;
       if (!q) return true;
       return [t.name, t.phone, t.region].some((v) => v.toLowerCase().includes(q));
     });
-  }, [rows, query, reachFilter]);
+  }, [targets, query, enabledFilter]);
 
   const { pageItems, props: pageProps } = usePagination(filtered);
+
+  // 选中项始终限定在当前筛选结果内，避免筛选后误操作看不见的数据
+  const visibleIds = filtered.map((t) => t.id);
+  const selected = selectedIds.filter((id) => visibleIds.includes(id));
+  const pageAllSelected = pageItems.length > 0 && pageItems.every((t) => selected.includes(t.id));
+
+  function toggleOne(id: string) {
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  }
+
+  function togglePage(checked: boolean) {
+    const ids = pageItems.map((t) => t.id);
+    setSelectedIds((prev) =>
+      checked ? [...new Set([...prev, ...ids])] : prev.filter((x) => !ids.includes(x)),
+    );
+  }
 
   const bulkStats = useMemo(() => {
     let valid = 0;
@@ -73,8 +83,9 @@ function TargetsPage() {
   }, [bulk]);
 
   const regions = new Set(targets.map((t) => t.region)).size;
-  const untouched = rows.filter((r) => r.reach.status === "untouched").length;
-  const deliveredCount = rows.filter((r) => r.reach.status === "delivered").length;
+  const enabledCount = targets.filter((t) => t.enabled).length;
+  const disabledCount = targets.length - enabledCount;
+
 
   function openSingle(target?: Target) {
     setName(target?.name ?? "");
