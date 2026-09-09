@@ -790,6 +790,7 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
       removeTemplate,
       createTask,
       sendReply,
+      markReplyRead,
       threadRecords: (threadId) =>
         state.records.filter((r) => r.threadId === threadId).sort((a, b) => a.seq - b.seq),
       taskRecords: (taskId) =>
@@ -812,6 +813,7 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
       removeTemplate,
       createTask,
       sendReply,
+      markReplyRead,
     ],
   );
 
