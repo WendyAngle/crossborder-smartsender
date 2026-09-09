@@ -184,21 +184,9 @@ function DetailsPage() {
         (r.contentZh ?? "").toLowerCase().includes(q)
       );
     });
-    // 同一会话的记录聚在一起：会话按最新时间倒序，会话内按序号正序
-    const latest = new Map<string, number>();
-    for (const r of list) {
-      const t = new Date(r.createdAt).getTime();
-      latest.set(r.threadId, Math.max(latest.get(r.threadId) ?? 0, t));
-    }
-    const sorted = [...list].sort(
-      (a, b) =>
-        (latest.get(b.threadId) ?? 0) - (latest.get(a.threadId) ?? 0) ||
-        a.threadId.localeCompare(b.threadId) ||
-        a.seq - b.seq,
-    );
     // 一条内容一条记录：我方外发与对方回复各自独立成行
     const rows: Row[] = [];
-    for (const r of sorted) {
+    for (const r of list) {
       rows.push({
         key: `${r.id}-out`,
         record: r,
