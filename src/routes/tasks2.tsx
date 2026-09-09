@@ -498,7 +498,7 @@ function TasksPage() {
                     )}
                   </td>
                   <td className="px-3 py-3">
-                    <TaskStatusCell stat={stat} />
+                    <TaskStatusCell stat={stat} showProgress={false} />
                   </td>
                   <td className="px-3 py-3 tabular-nums text-muted-foreground">
                     {tpl
