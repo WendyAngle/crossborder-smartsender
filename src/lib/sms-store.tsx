@@ -480,6 +480,7 @@ type Store = State & {
     targetIds: string[];
     templateId: string;
     msgType: MsgType;
+    followUp: boolean;
   }) => void;
   sendReply: (recordId: string, text: string) => void;
   threadRecords: (threadId: string) => SmsRecord[];
