@@ -62,6 +62,21 @@ function TargetsPage() {
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   }
 
+  function selectAll() {
+    setSelectedIds((prev) => [...new Set([...prev, ...visibleIds])]);
+  }
+
+  function invertSelection() {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      for (const id of visibleIds) {
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+      }
+      return [...next];
+    });
+  }
+
   const bulkStats = useMemo(() => {
     let valid = 0;
     let invalid = 0;
