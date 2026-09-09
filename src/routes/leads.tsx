@@ -25,18 +25,16 @@ export const Route = createFileRoute("/leads")({
   component: LeadsPage,
 });
 
-type LeadStage = "pending" | "following" | "watching";
+type LeadStatus = "unread" | "read";
 
-const STAGE_LABEL: Record<LeadStage, string> = {
-  pending: "待跟进",
-  following: "跟进中",
-  watching: "观察中",
+const STATUS_LABEL: Record<LeadStatus, string> = {
+  unread: "未读",
+  read: "已读",
 };
 
-const STAGE_CLASS: Record<LeadStage, string> = {
-  pending: "bg-destructive/10 text-destructive",
-  following: "bg-primary/10 text-primary",
-  watching: "bg-muted text-muted-foreground",
+const STATUS_CLASS: Record<LeadStatus, string> = {
+  unread: "bg-destructive/10 text-destructive",
+  read: "bg-muted text-muted-foreground",
 };
 
 type Lead = {
@@ -46,7 +44,7 @@ type Lead = {
   unread: number;
   lastReply: SmsRecord;
   lastAt: string;
-  stage: LeadStage;
+  status: LeadStatus;
 };
 
 const timeOf = (v: string | null | undefined) => (v ? new Date(v).getTime() : 0);
@@ -66,7 +64,7 @@ function relativeTime(iso: string) {
 function LeadsPage() {
   const { records, tasks, targetById, markReplyRead, sendReply } = useSmsStore();
   const [query, setQuery] = useState("");
-  const [stage, setStage] = useState<"all" | LeadStage>("all");
+  const [status, setStatus] = useState<"all" | LeadStatus>("all");
   const [activeId, setActiveId] = useState<string | null>(null);
 
   const leads = useMemo<Lead[]>(() => {
@@ -85,8 +83,7 @@ function LeadsPage() {
       const unread = replies.filter((r) => !r.replyRead).length;
       const last = sorted[sorted.length - 1]!;
       const lastAt = Math.max(timeOf(lastReply.replyAt), timeOf(last.createdAt));
-      const stageOf: LeadStage =
-        unread > 0 ? "pending" : last.kind === "reply" ? "following" : "watching";
+      const statusOf: LeadStatus = unread > 0 ? "unread" : "read";
       out.push({
         threadId,
         targetId: sorted[0]!.targetId,
@@ -94,7 +91,7 @@ function LeadsPage() {
         unread,
         lastReply,
         lastAt: new Date(lastAt).toISOString(),
-        stage: stageOf,
+        status: statusOf,
       });
     }
     return out.sort(
@@ -105,7 +102,7 @@ function LeadsPage() {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return leads.filter((l) => {
-      if (stage !== "all" && l.stage !== stage) return false;
+      if (status !== "all" && l.status !== status) return false;
       if (!q) return true;
       const t = targetById(l.targetId);
       return (
@@ -116,7 +113,7 @@ function LeadsPage() {
         (l.lastReply.replyZh ?? "").toLowerCase().includes(q)
       );
     });
-  }, [leads, query, stage, targetById]);
+  }, [leads, query, status, targetById]);
 
   const active = filtered.find((l) => l.threadId === activeId) ?? filtered[0] ?? null;
 
@@ -128,12 +125,11 @@ function LeadsPage() {
   }
 
   const totalUnread = leads.reduce((s, l) => s + l.unread, 0);
-  const pendingCount = leads.filter((l) => l.stage === "pending").length;
 
   return (
     <AppShell
       title="会话跟进"
-      subtitle={`${leads.length} 个有回复的会话 · ${pendingCount} 个待跟进 · ${totalUnread} 条未读`}
+      subtitle={`${leads.length} 个有回复的会话 · ${totalUnread} 条未读`}
     >
       <div className="flex h-[calc(100vh-8.5rem)] min-h-[560px] overflow-hidden rounded-2xl border border-border bg-card">
         {/* 会话列表 */}
@@ -146,17 +142,17 @@ function LeadsPage() {
               placeholder="搜索目标 / 手机号 / 地区 / 回复内容"
             />
             <div className="flex gap-1.5">
-              {(["all", "pending", "following", "watching"] as const).map((s) => (
+              {(["all", "unread", "read"] as const).map((s) => (
                 <button
                   key={s}
-                  onClick={() => setStage(s)}
+                  onClick={() => setStatus(s)}
                   className={`rounded-lg px-2.5 py-1.5 text-xs transition ${
-                    stage === s
+                    status === s
                       ? "bg-primary text-primary-foreground"
                       : "bg-background text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  {s === "all" ? "全部" : STAGE_LABEL[s]}
+                  {s === "all" ? "全部" : STATUS_LABEL[s]}
                 </button>
               ))}
             </div>
@@ -202,9 +198,9 @@ function LeadsPage() {
                       )}
                     </div>
                     <span
-                      className={`mt-1.5 inline-flex rounded-md px-1.5 py-0.5 text-[10px] ${STAGE_CLASS[l.stage]}`}
+                      className={`mt-1.5 inline-flex rounded-md px-1.5 py-0.5 text-[10px] ${STATUS_CLASS[l.status]}`}
                     >
-                      {STAGE_LABEL[l.stage]}
+                      {STATUS_LABEL[l.status]}
                     </span>
                   </div>
                 </button>
@@ -277,9 +273,9 @@ function LeadChat({
           </div>
         </div>
         <span
-          className={`ml-auto rounded-md px-2 py-1 text-[11px] ${STAGE_CLASS[lead.stage]}`}
+          className={`ml-auto rounded-md px-2 py-1 text-[11px] ${STATUS_CLASS[lead.status]}`}
         >
-          {STAGE_LABEL[lead.stage]}
+          {STATUS_LABEL[lead.status]}
         </span>
       </div>
 
