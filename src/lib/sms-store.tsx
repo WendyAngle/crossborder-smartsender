@@ -50,8 +50,11 @@ export type Task = {
   msgType: MsgType;
   /** 是否跟进回复：开启后可对客户回复做人工跟进，单条积分按 1.5 倍计费 */
   followUp: boolean;
+  /** 本次任务为模板变量填写的取值（{联系人} 按目标姓名自动填充，不在此存储） */
+  varValues?: Record<string, string> | undefined;
   createdAt: string;
 };
+
 
 /**
  * sending  = 提交网关中
@@ -147,11 +150,27 @@ export const VARIABLES = [
   { token: "{其他链接}", label: "其他链接" },
 ] as const;
 
+/** 由系统自动填充的变量：发送时按每个目标的信息替换，无需人工填写 */
+export const AUTO_VARIABLES: readonly string[] = ["{联系人}"];
+
 const SAMPLE_VALUES: Record<string, string> = {
   "{我方产品}": "AirMax 跨境直邮专线",
   "{官网链接}": "airhui.shop",
   "{其他链接}": "airhui.shop/promo",
 };
+
+/** 模板默认取值：新建任务时作为变量输入框的初始值 */
+export const defaultVarValue = (token: string) => SAMPLE_VALUES[token] ?? "";
+
+/** 模板内容中实际用到的变量（按 VARIABLES 顺序），含系统自动填充变量 */
+export function templateVariables(content: string) {
+  return VARIABLES.filter((v) => content.includes(v.token));
+}
+
+/** 模板内容中需要人工在新建任务时填写的变量 */
+export function manualVariables(content: string) {
+  return templateVariables(content).filter((v) => !AUTO_VARIABLES.includes(v.token));
+}
 
 /** 手机号格式校验：可选 + 开头，仅允许数字与空格 / - / ( )，有效数字位数 7-15 位 */
 export function isValidPhone(phone: string) {
@@ -168,13 +187,23 @@ export function isValidTargetRow(row: { name: string; phone: string }) {
   return row.name.trim().length > 0 && row.name.trim().length <= 60 && isValidPhone(row.phone);
 }
 
-export function renderTemplate(content: string, contactName = "Sophia") {
+/**
+ * 渲染模板内容：{联系人} 用目标姓名替换，其他变量优先使用任务填写的取值，缺省用示例值。
+ */
+export function renderTemplate(
+  content: string,
+  contactName = "Sophia",
+  values?: Record<string, string>,
+) {
   let out = content.replaceAll("{联系人}", contactName);
-  for (const [token, value] of Object.entries(SAMPLE_VALUES)) {
+  for (const { token } of VARIABLES) {
+    if (AUTO_VARIABLES.includes(token)) continue;
+    const value = values?.[token]?.trim() || SAMPLE_VALUES[token] || token;
     out = out.replaceAll(token, value);
   }
   return out;
 }
+
 
 /** 开启「跟进回复」的任务按基础积分的 1.5 倍计费（含后续人工跟进短信额度） */
 export const FOLLOW_UP_MULTIPLIER = 1.5;
@@ -521,7 +550,10 @@ type Store = State & {
     templateId: string;
     msgType: MsgType;
     followUp: boolean;
+    /** 模板变量取值（{联系人} 自动按目标姓名填充） */
+    varValues?: Record<string, string> | undefined;
   }) => void;
+
   sendReply: (recordId: string, text: string) => void;
   /** 将会话中对方回复标记为已读 */
   markReplyRead: (recordId: string) => void;
@@ -740,12 +772,14 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
       templateId,
       msgType,
       followUp,
+      varValues,
     }: {
       name: string;
       targetIds: string[];
       templateId: string;
       msgType: MsgType;
       followUp: boolean;
+      varValues?: Record<string, string> | undefined;
     }) => {
       setState((s) => {
         const tpl = s.templates.find((t) => t.id === templateId);
@@ -758,11 +792,13 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
           templateId,
           msgType,
           followUp,
+          varValues,
           createdAt: now,
         };
         const records: SmsRecord[] = targetIds.map((tid) => {
           const target = s.targets.find((t) => t.id === tid);
-          const content = renderTemplate(tpl.content, target?.name ?? "客户");
+          const content = renderTemplate(tpl.content, target?.name ?? "客户", varValues);
+
           return {
             id: uid(),
             targetId: tid,
