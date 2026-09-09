@@ -386,15 +386,7 @@ function TargetsPage() {
         <table className="w-full border-collapse text-left text-sm">
           <thead>
             <tr className="border-b border-border text-[11px] uppercase tracking-wide text-muted-foreground">
-              <th className="w-10 px-5 py-3">
-                <input
-                  type="checkbox"
-                  className="size-3.5 accent-[hsl(var(--primary))]"
-                  aria-label="全选当前页"
-                  checked={pageAllSelected}
-                  onChange={(e) => togglePage(e.target.checked)}
-                />
-              </th>
+              <th className="w-10 px-5 py-3" />
               <th className="px-3 py-3 font-medium">姓名</th>
               <th className="px-3 py-3 font-medium">手机号</th>
               <th className="px-3 py-3 font-medium">国家 / 地区</th>
