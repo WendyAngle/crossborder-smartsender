@@ -304,20 +304,17 @@ function TargetsPage() {
             />
             <select
               className="field w-28 py-1.5 text-xs"
-              value={reachFilter}
+              value={enabledFilter}
               onChange={(e) => {
-                setReachFilter(e.target.value as "all" | ReachStatus | "no-reply");
+                setEnabledFilter(e.target.value as "all" | "enabled" | "disabled");
                 pageProps.onPage(1);
               }}
             >
               <option value="all">全部状态</option>
-              <option value="untouched">未触达</option>
-              <option value="sending">发送中</option>
-              <option value="sent">已发送</option>
-              <option value="delivered">已送达</option>
-              <option value="failed">送达失败</option>
-              <option value="no-reply">已触达未回复</option>
+              <option value="enabled">启用</option>
+              <option value="disabled">禁用</option>
             </select>
+
             <button
               className="btn-ghost px-3 py-1.5 text-xs"
               onClick={() => setMode({ kind: "import" })}
