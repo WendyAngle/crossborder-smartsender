@@ -270,72 +270,102 @@ function TemplatesPage() {
           )}
         </div>
 
-        <div className="divide-y divide-border">
-          {pageItems.map((t) => (
-            <div key={t.id} className="flex items-start gap-4 px-5 py-4 hover:bg-background/70">
+        <div className="overflow-x-auto">
+          <div className="min-w-[720px]">
+            {/* 表头 */}
+            <div className="grid grid-cols-[44px_1.2fr_2fr_0.9fr_140px] items-center border-b border-border bg-background/60 px-5 py-2.5 text-xs font-medium text-muted-foreground">
               <input
                 type="checkbox"
-                className="mt-1 size-3.5 shrink-0 accent-[hsl(var(--primary))]"
-                aria-label={`选择 ${t.name}`}
-                checked={selected.includes(t.id)}
-                onChange={() => toggleOne(t.id)}
+                className="size-3.5 accent-[hsl(var(--primary))]"
+                aria-label="全选当前页"
+                checked={pageAllSelected}
+                onChange={(e) => togglePage(e.target.checked)}
               />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">{t.name}</span>
-                  {t.enabled ? (
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-medium text-primary">
-                      <span className="size-1.5 rounded-full bg-primary" />
-                      启用
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
-                      <span className="size-1.5 rounded-full bg-muted-foreground/60" />
-                      禁用
-                    </span>
-                  )}
-                </div>
-                <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{t.content}</p>
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {VARIABLES.filter((v) => t.content.includes(v.token)).map((v) => (
-                    <span
-                      key={v.token}
-                      className="rounded-md bg-accent px-1.5 py-0.5 text-[10px] font-medium text-accent-foreground"
-                    >
-                      {v.token}
-                    </span>
-                  ))}
-                  <span className="rounded-md border border-border px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                    约 {countCredits(t.content)} 积分
-                  </span>
-                </div>
-              </div>
-              <div className="flex shrink-0 gap-2">
-                <button
-                  className="btn-ghost px-3 py-1.5 text-xs"
-                  onClick={() => setTemplatesEnabled([t.id], !t.enabled)}
-                >
-                  {t.enabled ? "禁用" : "启用"}
-                </button>
-                <button className="btn-ghost px-3 py-1.5 text-xs" onClick={() => openDrawer(t)}>
-                  编辑
-                </button>
-                <button
-                  className="btn-ghost px-3 py-1.5 text-xs hover:text-destructive"
-                  onClick={() => removeTemplate(t.id)}
-                >
-                  删除
-                </button>
-              </div>
+              <span>模板名称</span>
+              <span>模板内容</span>
+              <span>变量</span>
+              <span className="text-right">操作</span>
             </div>
-          ))}
-          {filtered.length === 0 && (
-            <div className="px-5 py-12 text-center text-sm text-muted-foreground">
-              暂无匹配的模板，可调整筛选或点击「新建模板」创建
-            </div>
-          )}
-        </div>
 
+            {/* 数据行 */}
+            <div className="divide-y divide-border">
+              {pageItems.map((t) => {
+                const usedVars = VARIABLES.filter((v) => t.content.includes(v.token));
+                return (
+                  <div
+                    key={t.id}
+                    className="grid grid-cols-[44px_1.2fr_2fr_0.9fr_140px] items-center px-5 py-3.5 text-sm hover:bg-background/70"
+                  >
+                    <input
+                      type="checkbox"
+                      className="size-3.5 accent-[hsl(var(--primary))]"
+                      aria-label={`选择 ${t.name}`}
+                      checked={selected.includes(t.id)}
+                      onChange={() => toggleOne(t.id)}
+                    />
+                    <div className="min-w-0 pr-3">
+                      <div className="flex items-center gap-2">
+                        <span className="truncate font-medium" title={t.name}>
+                          {t.name}
+                        </span>
+                        {t.enabled ? (
+                          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                            <span className="size-1 rounded-full bg-primary" />
+                            启用
+                          </span>
+                        ) : (
+                          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                            <span className="size-1 rounded-full bg-muted-foreground/60" />
+                            禁用
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <p className="min-w-0 truncate pr-3 text-muted-foreground" title={t.content}>
+                      {t.content}
+                    </p>
+                    <div className="flex min-w-0 flex-wrap gap-1 pr-3">
+                      {usedVars.length > 0 ? (
+                        usedVars.map((v) => (
+                          <span
+                            key={v.token}
+                            className="rounded-md bg-accent px-1.5 py-0.5 text-[10px] font-medium text-accent-foreground"
+                          >
+                            {v.token}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </div>
+                    <div className="flex shrink-0 justify-end gap-1">
+                      <button
+                        className="btn-ghost px-2 py-1 text-xs"
+                        onClick={() => setTemplatesEnabled([t.id], !t.enabled)}
+                      >
+                        {t.enabled ? "禁用" : "启用"}
+                      </button>
+                      <button className="btn-ghost px-2 py-1 text-xs" onClick={() => openDrawer(t)}>
+                        编辑
+                      </button>
+                      <button
+                        className="btn-ghost px-2 py-1 text-xs hover:text-destructive"
+                        onClick={() => removeTemplate(t.id)}
+                      >
+                        删除
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+              {filtered.length === 0 && (
+                <div className="px-5 py-12 text-center text-sm text-muted-foreground">
+                  暂无匹配的模板，可调整筛选或点击「新建模板」创建
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
 
         <Pagination {...pageProps} unit="个" />
       </section>
