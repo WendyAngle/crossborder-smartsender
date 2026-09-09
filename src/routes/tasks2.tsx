@@ -9,13 +9,17 @@ import {
   FOLLOW_UP_MULTIPLIER,
   TASK_STATUS_LABEL,
   countCredits,
+  defaultVarValue,
   formatTime,
+  manualVariables,
   renderTemplate,
+  templateVariables,
   useSmsStore,
   type MsgType,
   type Target,
   type TaskStatus,
 } from "@/lib/sms-store";
+
 
 export const Route = createFileRoute("/tasks2")({
   head: () => ({
