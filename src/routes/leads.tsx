@@ -25,18 +25,16 @@ export const Route = createFileRoute("/leads")({
   component: LeadsPage,
 });
 
-type LeadStage = "pending" | "following" | "watching";
+type LeadStatus = "unread" | "read";
 
-const STAGE_LABEL: Record<LeadStage, string> = {
-  pending: "待跟进",
-  following: "跟进中",
-  watching: "观察中",
+const STATUS_LABEL: Record<LeadStatus, string> = {
+  unread: "未读",
+  read: "已读",
 };
 
-const STAGE_CLASS: Record<LeadStage, string> = {
-  pending: "bg-destructive/10 text-destructive",
-  following: "bg-primary/10 text-primary",
-  watching: "bg-muted text-muted-foreground",
+const STATUS_CLASS: Record<LeadStatus, string> = {
+  unread: "bg-destructive/10 text-destructive",
+  read: "bg-muted text-muted-foreground",
 };
 
 type Lead = {
