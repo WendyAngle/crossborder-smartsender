@@ -64,7 +64,7 @@ function relativeTime(iso: string) {
 function LeadsPage() {
   const { records, tasks, targetById, markReplyRead, sendReply } = useSmsStore();
   const [query, setQuery] = useState("");
-  const [stage, setStage] = useState<"all" | LeadStage>("all");
+  const [status, setStatus] = useState<"all" | LeadStatus>("all");
   const [activeId, setActiveId] = useState<string | null>(null);
 
   const leads = useMemo<Lead[]>(() => {
