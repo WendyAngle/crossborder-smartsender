@@ -158,6 +158,16 @@ function DetailsPage() {
     }
   }
 
+  type Row = {
+    key: string;
+    record: SmsRecord;
+    role: "receiver" | "sender";
+    content: string;
+    contentZh: string | null;
+    msgType: MsgType;
+    time: string;
+  };
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     const list = records.filter((r) => {
@@ -180,15 +190,41 @@ function DetailsPage() {
       const t = new Date(r.createdAt).getTime();
       latest.set(r.threadId, Math.max(latest.get(r.threadId) ?? 0, t));
     }
-    return [...list].sort(
+    const sorted = [...list].sort(
       (a, b) =>
         (latest.get(b.threadId) ?? 0) - (latest.get(a.threadId) ?? 0) ||
         a.threadId.localeCompare(b.threadId) ||
         a.seq - b.seq,
     );
+    // 一条内容一条记录：我方外发与对方回复各自独立成行
+    const rows: Row[] = [];
+    for (const r of sorted) {
+      rows.push({
+        key: `${r.id}-out`,
+        record: r,
+        role: "receiver",
+        content: r.content,
+        contentZh: r.contentZh,
+        msgType: r.msgType ?? "text",
+        time: r.createdAt,
+      });
+      if (r.reply) {
+        rows.push({
+          key: `${r.id}-reply`,
+          record: r,
+          role: "sender",
+          content: r.reply,
+          contentZh: r.replyZh,
+          msgType: "text",
+          time: r.replyAt ?? r.createdAt,
+        });
+      }
+    }
+    return rows;
   }, [records, query, statusFilter, replyFilter, typeFilter, targetById]);
 
   const { pageItems, props: pageProps } = usePagination(filtered);
+
 
   const delivered = records.filter((r) => r.status === "delivered").length;
   const replies = records.filter((r) => r.reply).length;
@@ -383,6 +419,7 @@ function DetailsPage() {
             <thead>
               <tr className="border-b border-border text-[11px] uppercase tracking-wide text-muted-foreground">
                 <th className="px-5 py-3 font-medium">目标</th>
+                <th className="px-3 py-3 font-medium">目标角色</th>
                 <th className="px-3 py-3 font-medium">状态</th>
                 <th className="px-3 py-3 font-medium">发送内容</th>
                 <th className="px-3 py-3 font-medium">积分</th>
@@ -390,17 +427,23 @@ function DetailsPage() {
                 <th className="px-3 py-3 font-medium">成功时间</th>
                 <th className="px-3 py-3 font-medium">失败原因</th>
                 <th className="px-3 py-3 font-medium">是否回复</th>
-                <th className="px-5 py-3 text-right font-medium">操作</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {pageItems.map((r) => {
+              {pageItems.map((row) => {
+                const r = row.record;
                 const t = targetById(r.targetId);
+                const isReplyRow = row.role === "sender";
                 const isFollowUp = r.kind === "reply";
                 return (
                   <tr
-                    key={r.id}
-                    className={`transition-colors hover:bg-background/70 ${isFollowUp ? "bg-background/40" : ""}`}
+                    key={row.key}
+                    className={`cursor-pointer transition-colors hover:bg-background/70 ${isReplyRow ? "bg-accent/30" : isFollowUp ? "bg-background/40" : ""}`}
+                    onClick={() => {
+                      markReplyRead(r.id);
+                      setReplyTo(r);
+                      setReplyText("");
+                    }}
                   >
                     <td className="px-5 py-3">
                       <div className={`flex items-center gap-1.5 ${isFollowUp ? "pl-4" : ""}`}>
@@ -421,76 +464,63 @@ function DetailsPage() {
                       </div>
                     </td>
                     <td className="px-3 py-3">
-                      <StatusPill status={r.status} />
+                      <span
+                        className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
+                          isReplyRow
+                            ? "bg-accent text-accent-foreground"
+                            : "bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        {isReplyRow ? "发送方" : "接收方"}
+                      </span>
+                    </td>
+                    <td className="px-3 py-3">
+                      {isReplyRow ? (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      ) : (
+                        <StatusPill status={r.status} />
+                      )}
                     </td>
                     <td className="px-3 py-3 text-muted-foreground">
                       <HoverBubble
                         label={
-                          (r.msgType ?? "text") === "image"
-                            ? "图片短信 · 生成图与文案"
-                            : "实际发送内容"
+                          isReplyRow
+                            ? "对方回复原文"
+                            : row.msgType === "image"
+                              ? "图片短信 · 生成图与文案"
+                              : "实际发送内容"
                         }
-                        original={r.content}
-                        translated={r.contentZh}
-                        poster={(r.msgType ?? "text") === "image"}
+                        original={row.content}
+                        translated={row.contentZh}
+                        poster={row.msgType === "image"}
                       >
                         <span className="block">
-                          <MsgTypePill type={r.msgType ?? "text"} />
+                          <MsgTypePill type={row.msgType} />
                           <span className="mt-0.5 block max-w-40 truncate underline decoration-dotted decoration-border underline-offset-4">
-                            {r.content}
+                            {row.content}
                           </span>
                         </span>
                       </HoverBubble>
-
                     </td>
-                    <td className="px-3 py-3 tabular-nums text-muted-foreground">{r.credits}</td>
-                    <td className="whitespace-nowrap px-3 py-3 text-xs tabular-nums text-muted-foreground">
-                      {formatTime(r.createdAt)}
+                    <td className="px-3 py-3 tabular-nums text-muted-foreground">
+                      {isReplyRow ? "—" : r.credits}
                     </td>
                     <td className="whitespace-nowrap px-3 py-3 text-xs tabular-nums text-muted-foreground">
-                      {formatTime(r.succeededAt) ?? "—"}
+                      {formatTime(row.time)}
                     </td>
-                    <td className="px-3 py-3 text-xs text-destructive">{r.failReason ?? ""}</td>
+                    <td className="whitespace-nowrap px-3 py-3 text-xs tabular-nums text-muted-foreground">
+                      {isReplyRow ? "—" : (formatTime(r.succeededAt) ?? "—")}
+                    </td>
+                    <td className="px-3 py-3 text-xs text-destructive">
+                      {isReplyRow ? "" : (r.failReason ?? "")}
+                    </td>
                     <td className="px-3 py-3">
-                      {r.reply ? (
-                        <HoverBubble
-                          label="对方回复原文"
-                          original={r.reply}
-                          translated={r.replyZh}
-                        >
-                          <span className="text-xs font-medium underline decoration-dotted decoration-border underline-offset-4">
-                            是
-                          </span>
-                        </HoverBubble>
+                      {isReplyRow ? (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      ) : r.reply ? (
+                        <span className="text-xs font-medium">是</span>
                       ) : (
                         <span className="text-xs text-muted-foreground">否</span>
-                      )}
-                    </td>
-                    <td className="px-5 py-3 text-right">
-                      {r.reply ? (
-                        <button
-                          className="btn-primary px-3 py-1.5 text-xs"
-                          onClick={() => {
-                            markReplyRead(r.id);
-                            setReplyTo(r);
-                            setReplyText("");
-                          }}
-                        >
-                          回复
-                        </button>
-                      ) : r.seq > 1 || records.some((x) => x.threadId === r.threadId && x.seq > 1) ? (
-                        <button
-                          className="btn-ghost px-3 py-1.5 text-xs"
-                          onClick={() => {
-                            markReplyRead(r.id);
-                            setReplyTo(r);
-                            setReplyText("");
-                          }}
-                        >
-                          查看会话
-                        </button>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">—</span>
                       )}
                     </td>
                   </tr>
@@ -504,6 +534,7 @@ function DetailsPage() {
                 </tr>
               )}
             </tbody>
+
           </table>
         </div>
 
