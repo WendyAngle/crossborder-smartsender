@@ -189,25 +189,112 @@ function TemplatesPage() {
               : "0"
           }
         />
-        <StatCard label="含变量模板" value={String(templates.filter((t) => t.content.includes("{")).length)} />
+        <StatCard label="启用中" value={String(templates.filter((t) => t.enabled).length)} />
       </div>
 
       <section className="panel overflow-hidden">
-        <div className="flex items-center gap-3 border-b border-border px-5 py-4">
+        <div className="flex flex-wrap items-center gap-3 border-b border-border px-5 py-4">
           <h2 className="font-display text-[15px] font-semibold">模板库</h2>
-          <span className="text-xs text-muted-foreground">共 {templates.length} 个</span>
-          <div className="ml-auto">
+          <span className="text-xs text-muted-foreground">
+            共 {templates.length} 个 · 当前筛选 {filtered.length} 个
+          </span>
+          <div className="ml-auto flex items-center gap-2">
+            <input
+              className="field w-52 py-1.5 text-xs"
+              placeholder="搜索模板名称 / 内容关键词"
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                pageProps.onPage(1);
+              }}
+            />
+            <select
+              className="field w-28 py-1.5 text-xs"
+              value={enabledFilter}
+              onChange={(e) => {
+                setEnabledFilter(e.target.value as "all" | "enabled" | "disabled");
+                pageProps.onPage(1);
+              }}
+            >
+              <option value="all">全部状态</option>
+              <option value="enabled">启用</option>
+              <option value="disabled">禁用</option>
+            </select>
             <button className="btn-primary px-3 py-1.5 text-xs" onClick={() => openDrawer(null)}>
               <span className="-ml-0.5 text-base leading-none">+</span> 新建模板
             </button>
           </div>
         </div>
 
+        <div className="flex flex-wrap items-center gap-2 border-b border-border bg-background/60 px-5 py-2.5 text-xs">
+          <label className="inline-flex items-center gap-2 text-muted-foreground">
+            <input
+              type="checkbox"
+              className="size-3.5 accent-[hsl(var(--primary))]"
+              aria-label="全选当前页"
+              checked={pageAllSelected}
+              onChange={(e) => togglePage(e.target.checked)}
+            />
+            全选本页
+          </label>
+          <span className="text-muted-foreground">
+            已选择 <span className="font-semibold text-foreground">{selected.length}</span> 个
+          </span>
+          <button
+            className="btn-ghost px-3 py-1.5 text-xs disabled:opacity-40"
+            disabled={selected.length === 0}
+            onClick={() => {
+              setTemplatesEnabled(selected, true);
+              setSelectedIds([]);
+            }}
+          >
+            批量启用
+          </button>
+          <button
+            className="btn-ghost px-3 py-1.5 text-xs disabled:opacity-40"
+            disabled={selected.length === 0}
+            onClick={() => {
+              setTemplatesEnabled(selected, false);
+              setSelectedIds([]);
+            }}
+          >
+            批量禁用
+          </button>
+          {selected.length > 0 && (
+            <button
+              className="btn-ghost px-3 py-1.5 text-xs text-muted-foreground"
+              onClick={() => setSelectedIds([])}
+            >
+              取消选择
+            </button>
+          )}
+        </div>
+
         <div className="divide-y divide-border">
           {pageItems.map((t) => (
             <div key={t.id} className="flex items-start gap-4 px-5 py-4 hover:bg-background/70">
+              <input
+                type="checkbox"
+                className="mt-1 size-3.5 shrink-0 accent-[hsl(var(--primary))]"
+                aria-label={`选择 ${t.name}`}
+                checked={selected.includes(t.id)}
+                onChange={() => toggleOne(t.id)}
+              />
               <div className="min-w-0 flex-1">
-                <div className="font-medium">{t.name}</div>
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">{t.name}</span>
+                  {t.enabled ? (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-medium text-primary">
+                      <span className="size-1.5 rounded-full bg-primary" />
+                      启用
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
+                      <span className="size-1.5 rounded-full bg-muted-foreground/60" />
+                      禁用
+                    </span>
+                  )}
+                </div>
                 <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{t.content}</p>
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {VARIABLES.filter((v) => t.content.includes(v.token)).map((v) => (
@@ -224,6 +311,12 @@ function TemplatesPage() {
                 </div>
               </div>
               <div className="flex shrink-0 gap-2">
+                <button
+                  className="btn-ghost px-3 py-1.5 text-xs"
+                  onClick={() => setTemplatesEnabled([t.id], !t.enabled)}
+                >
+                  {t.enabled ? "禁用" : "启用"}
+                </button>
                 <button className="btn-ghost px-3 py-1.5 text-xs" onClick={() => openDrawer(t)}>
                   编辑
                 </button>
@@ -236,12 +329,13 @@ function TemplatesPage() {
               </div>
             </div>
           ))}
-          {templates.length === 0 && (
+          {filtered.length === 0 && (
             <div className="px-5 py-12 text-center text-sm text-muted-foreground">
-              暂无模板，点击「新建模板」创建
+              暂无匹配的模板，可调整筛选或点击「新建模板」创建
             </div>
           )}
         </div>
+
 
         <Pagination {...pageProps} unit="个" />
       </section>
