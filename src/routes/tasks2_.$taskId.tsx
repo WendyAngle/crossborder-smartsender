@@ -19,15 +19,15 @@ import {
 export const Route = createFileRoute("/tasks2_/$taskId")({
   head: () => ({
     meta: [
-      { title: "任务目标名单 · 任务管理2" },
+      { title: "任务目标名单 · 任务管理" },
       {
         name: "description",
-        content: "任务管理2 的任务详情：目标名单触达状态、未读回复提醒，并可直接打开会话与回复。",
+        content: "任务管理 的任务详情：目标名单触达状态、未读回复提醒，并可直接打开会话与回复。",
       },
-      { property: "og:title", content: "任务目标名单 · 任务管理2" },
+      { property: "og:title", content: "任务目标名单 · 任务管理" },
       {
         property: "og:description",
-        content: "任务管理2 的任务详情：目标名单触达状态、未读回复提醒，并可直接打开会话与回复。",
+        content: "任务管理 的任务详情：目标名单触达状态、未读回复提醒，并可直接打开会话与回复。",
       },
     ],
   }),
@@ -89,7 +89,7 @@ function Task2TargetsPage() {
           没有找到该任务，可能已被删除。
           <div className="mt-4">
             <Link to="/tasks2" className="btn-ghost px-3 py-1.5 text-xs">
-              返回任务管理2
+              返回任务管理
             </Link>
           </div>
         </section>
@@ -107,7 +107,7 @@ function Task2TargetsPage() {
     >
       <div className="mb-4 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
         <Link to="/tasks2" className="btn-ghost px-3 py-1.5 text-xs">
-          ← 返回任务管理2
+          ← 返回任务管理
         </Link>
         {stat && <TaskStatusPill status={stat.status} />}
         <span>发信模板：{template?.name ?? "已删除模板"}</span>

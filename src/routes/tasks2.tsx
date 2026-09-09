@@ -24,12 +24,12 @@ import {
 export const Route = createFileRoute("/tasks2")({
   head: () => ({
     meta: [
-      { title: "任务管理2 · 短信营销管理系统" },
+      { title: "任务管理 · 短信营销管理系统" },
       {
         name: "description",
         content: "新建短信营销任务：自动生成任务名称、选择目标群与发信模板，并预览发信内容。",
       },
-      { property: "og:title", content: "任务管理2 · 短信营销管理系统" },
+      { property: "og:title", content: "任务管理 · 短信营销管理系统" },
       {
         property: "og:description",
         content: "新建短信营销任务：自动生成任务名称、选择目标群与发信模板，并预览发信内容。",
@@ -286,7 +286,7 @@ function TasksPage() {
 
   return (
     <AppShell
-      title="任务管理2"
+      title="任务管理"
       subtitle="批量发信任务与内容预览"
       drawer={
         open ? (
