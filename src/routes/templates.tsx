@@ -61,20 +61,18 @@ function TemplatesPage() {
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   }
 
-  function selectAll() {
-    setSelectedIds((prev) => [...new Set([...prev, ...visibleIds])]);
-  }
+  const pageAllSelected = pageItems.length > 0 && pageItems.every((t) => selected.includes(t.id));
 
-  function invertSelection() {
+  function togglePageAll() {
     setSelectedIds((prev) => {
-      const next = new Set(prev);
-      for (const id of visibleIds) {
-        if (next.has(id)) next.delete(id);
-        else next.add(id);
+      const pageIds = pageItems.map((t) => t.id);
+      if (pageItems.every((t) => prev.includes(t.id))) {
+        return prev.filter((id) => !pageIds.includes(id));
       }
-      return [...next];
+      return [...new Set([...prev, ...pageIds])];
     });
   }
+
 
 
   function openDrawer(tpl: Template | null) {
@@ -257,14 +255,14 @@ function TemplatesPage() {
           <div className="min-w-[720px]">
             {/* 表头 */}
             <div className="grid grid-cols-[44px_1.2fr_2fr_0.9fr_140px] items-center border-b border-border bg-background/60 px-5 py-2.5 text-xs font-medium text-muted-foreground">
-              <div className="flex flex-col gap-0.5">
-                <button className="text-left text-[10px] leading-tight hover:text-foreground" onClick={selectAll}>
-                  全选
-                </button>
-                <button className="text-left text-[10px] leading-tight hover:text-foreground" onClick={invertSelection}>
-                  反全选
-                </button>
-              </div>
+              <input
+                type="checkbox"
+                className="size-3.5 accent-[hsl(var(--primary))]"
+                aria-label="全选当前页"
+                checked={pageAllSelected}
+                onChange={togglePageAll}
+              />
+
               <span>模板名称</span>
               <span>模板内容</span>
               <span>变量</span>
