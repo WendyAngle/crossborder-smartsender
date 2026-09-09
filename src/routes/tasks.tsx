@@ -193,6 +193,7 @@ function TasksPage() {
   const [selected, setSelected] = useState<string[]>([]);
   const [templateId, setTemplateId] = useState(templates[0]?.id ?? "");
   const [msgType, setMsgType] = useState<MsgType>("text");
+  const [followUp, setFollowUp] = useState(true);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | TaskStatus>("all");
   const [typeFilter, setTypeFilter] = useState<"all" | MsgType>("all");
