@@ -445,6 +445,7 @@ function TasksPage() {
               <th className="px-3 py-3 font-medium">目标数</th>
               <th className="px-3 py-3 font-medium">发信模板</th>
               <th className="px-3 py-3 font-medium">内容类型</th>
+              <th className="px-3 py-3 font-medium">跟进回复</th>
               <th className="px-3 py-3 font-medium">任务状态</th>
               <th className="px-3 py-3 font-medium">预计积分</th>
               <th className="px-3 py-3 font-medium">创建时间</th>
@@ -471,10 +472,23 @@ function TasksPage() {
                     <MsgTypePill type={task.msgType ?? "text"} />
                   </td>
                   <td className="px-3 py-3">
+                    <span
+                      className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium ${
+                        (task.followUp ?? true)
+                          ? "bg-primary/15 text-primary"
+                          : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      {(task.followUp ?? true) ? "跟进" : "不跟进"}
+                    </span>
+                  </td>
+                  <td className="px-3 py-3">
                     <TaskStatusCell stat={stat} />
                   </td>
                   <td className="px-3 py-3 tabular-nums text-muted-foreground">
-                    {tpl ? countCredits(tpl.content, task.msgType ?? "text") * task.targetIds.length : 0}
+                    {tpl
+                      ? countCredits(tpl.content, task.followUp ?? true) * task.targetIds.length
+                      : 0}
                   </td>
                   <td className="whitespace-nowrap px-3 py-3 text-xs tabular-nums text-muted-foreground">
                     {formatTime(task.createdAt)}
@@ -493,7 +507,7 @@ function TasksPage() {
             })}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-5 py-12 text-center text-sm text-muted-foreground">
+                <td colSpan={9} className="px-5 py-12 text-center text-sm text-muted-foreground">
                   {tasks.length === 0
                     ? "暂无任务，点击「新建任务」开始发信"
                     : "没有符合筛选条件的任务，试试调整搜索或状态筛选"}
