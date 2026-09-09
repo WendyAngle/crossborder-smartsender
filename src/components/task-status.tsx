@@ -21,13 +21,15 @@ export function TaskStatusPill({ status }: { status: TaskStatus }) {
 }
 
 /** 列表中的任务状态：徽标 + hover 展开各状态明细 */
-export function TaskStatusCell({ stat }: { stat: TaskStat }) {
+export function TaskStatusCell({ stat, showProgress = true }: { stat: TaskStat; showProgress?: boolean }) {
   return (
     <span className="group relative inline-flex cursor-default items-center gap-1.5">
       <TaskStatusPill status={stat.status} />
-      <span className="text-[11px] tabular-nums text-muted-foreground">
-        {stat.progress}%
-      </span>
+      {showProgress && (
+        <span className="text-[11px] tabular-nums text-muted-foreground">
+          {stat.progress}%
+        </span>
+      )}
       <span className="pointer-events-none absolute bottom-full left-0 z-20 mb-2 hidden w-56 rounded-xl bg-ink p-3 text-left text-[11px] leading-snug text-ink-foreground/90 shadow-lg group-hover:block">
         <span className="block">目标总数 {stat.total}</span>
         <span className="mt-1 block">已送达 {stat.delivered} · 送达失败 {stat.failed}</span>
