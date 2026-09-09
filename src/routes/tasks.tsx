@@ -6,7 +6,7 @@ import { MsgTypePill, SmsPoster } from "@/components/sms-image";
 import { TaskStatusCell } from "@/components/task-status";
 import {
   autoTaskName,
-  IMAGE_SURCHARGE,
+  FOLLOW_UP_MULTIPLIER,
   TASK_STATUS_LABEL,
   countCredits,
   formatTime,
