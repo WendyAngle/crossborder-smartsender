@@ -186,7 +186,7 @@ function TargetPicker({
 }
 
 function TasksPage() {
-  const { tasks, targets, templates, records, createTask, templateById, taskStatOf } =
+  const { tasks, targets, templates, records, createTask, templateById, taskStatOf, taskRecords } =
     useSmsStore();
   const [open, setOpen] = useState(false);
   const [taskName, setTaskName] = useState(autoTaskName());
@@ -228,8 +228,13 @@ function TasksPage() {
   }
 
   const rows = useMemo(
-    () => tasks.map((task) => ({ task, stat: taskStatOf(task) })),
-    [tasks, taskStatOf],
+    () =>
+      tasks.map((task) => ({
+        task,
+        stat: taskStatOf(task),
+        unread: taskRecords(task.id).filter((r) => r.reply && !r.replyRead).length,
+      })),
+    [tasks, taskStatOf, taskRecords],
   );
 
   const filtered = useMemo(() => {
@@ -446,6 +451,7 @@ function TasksPage() {
               <th className="px-3 py-3 font-medium">发信模板</th>
               <th className="px-3 py-3 font-medium">内容类型</th>
               <th className="px-3 py-3 font-medium">跟进回复</th>
+              <th className="px-3 py-3 font-medium">未读</th>
               <th className="px-3 py-3 font-medium">任务状态</th>
               <th className="px-3 py-3 font-medium">预计积分</th>
               <th className="px-3 py-3 font-medium">创建时间</th>
@@ -453,7 +459,7 @@ function TasksPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {pageItems.map(({ task, stat }) => {
+            {pageItems.map(({ task, stat, unread }) => {
               const tpl = templateById(task.templateId);
               return (
                 <tr key={task.id} className="transition-colors hover:bg-background/70">
@@ -482,6 +488,15 @@ function TasksPage() {
                       {(task.followUp ?? true) ? "跟进" : "不跟进"}
                     </span>
                   </td>
+                  <td className="px-3 py-3 tabular-nums">
+                    {unread > 0 ? (
+                      <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-red-500/15 px-1.5 py-0.5 text-[11px] font-semibold text-red-600">
+                        {unread}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">0</span>
+                    )}
+                  </td>
                   <td className="px-3 py-3">
                     <TaskStatusCell stat={stat} />
                   </td>
@@ -507,7 +522,7 @@ function TasksPage() {
             })}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={9} className="px-5 py-12 text-center text-sm text-muted-foreground">
+                <td colSpan={10} className="px-5 py-12 text-center text-sm text-muted-foreground">
                   {tasks.length === 0
                     ? "暂无任务，点击「新建任务」开始发信"
                     : "没有符合筛选条件的任务，试试调整搜索或状态筛选"}

@@ -124,6 +124,8 @@ export type SmsRecord = {
   /** 对方回复中文译文 */
   replyZh: string | null;
   replyAt: string | null;
+  /** 对方回复是否已读；有回复但未标记时视为未读 */
+  replyRead?: boolean;
 };
 
 export const VARIABLES = [
@@ -283,6 +285,7 @@ const initialRecords: SmsRecord[] = [
     reply: "Got it. Could you send stock and shipping cost for AirMax US 9?",
     replyZh: "收到，能发一下 AirMax 美码 9 的库存和运费吗？",
     replyAt: ts(90),
+    replyRead: true,
   },
   {
     id: "r1b",
@@ -399,6 +402,7 @@ const initialRecords: SmsRecord[] = [
     reply: "好的，首单立减怎么使用？麻烦发个链接。",
     replyZh: null,
     replyAt: ts(44),
+    replyRead: true,
   },
   {
     id: "r7",
@@ -483,6 +487,8 @@ type Store = State & {
     followUp: boolean;
   }) => void;
   sendReply: (recordId: string, text: string) => void;
+  /** 将会话中对方回复标记为已读 */
+  markReplyRead: (recordId: string) => void;
   threadRecords: (threadId: string) => SmsRecord[];
   /** 该任务下每条群发短信的明细（含人工跟进回复） */
   taskRecords: (taskId: string) => SmsRecord[];
@@ -497,7 +503,7 @@ type Store = State & {
 export type ImportResult = { added: number; invalid: number; duplicated: number };
 
 const StoreContext = createContext<Store | null>(null);
-const KEY = "sms-console-state-v7";
+const KEY = "sms-console-state-v8";
 
 export const REACH_LABEL: Record<ReachStatus, string> = {
   untouched: "未触达",
@@ -754,8 +760,22 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
         replyZh: null,
         replyAt: null,
       };
-      return { ...s, records: [followUp, ...s.records] };
+      return {
+        ...s,
+        records: [
+          followUp,
+          // 我方已跟进回复，视为已读对方消息
+          ...s.records.map((r) => (r.id === recordId ? { ...r, replyRead: true } : r)),
+        ],
+      };
     });
+  }, []);
+
+  const markReplyRead = useCallback((recordId: string) => {
+    setState((s) => ({
+      ...s,
+      records: s.records.map((r) => (r.id === recordId ? { ...r, replyRead: true } : r)),
+    }));
   }, []);
 
   const value = useMemo<Store>(
@@ -770,6 +790,7 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
       removeTemplate,
       createTask,
       sendReply,
+      markReplyRead,
       threadRecords: (threadId) =>
         state.records.filter((r) => r.threadId === threadId).sort((a, b) => a.seq - b.seq),
       taskRecords: (taskId) =>
@@ -792,6 +813,7 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
       removeTemplate,
       createTask,
       sendReply,
+      markReplyRead,
     ],
   );
 
