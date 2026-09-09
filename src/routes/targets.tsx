@@ -57,17 +57,9 @@ function TargetsPage() {
   // 选中项始终限定在当前筛选结果内，避免筛选后误操作看不见的数据
   const visibleIds = filtered.map((t) => t.id);
   const selected = selectedIds.filter((id) => visibleIds.includes(id));
-  const pageAllSelected = pageItems.length > 0 && pageItems.every((t) => selected.includes(t.id));
 
   function toggleOne(id: string) {
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
-  }
-
-  function togglePage(checked: boolean) {
-    const ids = pageItems.map((t) => t.id);
-    setSelectedIds((prev) =>
-      checked ? [...new Set([...prev, ...ids])] : prev.filter((x) => !ids.includes(x)),
-    );
   }
 
   const bulkStats = useMemo(() => {
