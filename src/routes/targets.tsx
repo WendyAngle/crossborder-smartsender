@@ -62,6 +62,21 @@ function TargetsPage() {
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   }
 
+  function selectAll() {
+    setSelectedIds((prev) => [...new Set([...prev, ...visibleIds])]);
+  }
+
+  function invertSelection() {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      for (const id of visibleIds) {
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+      }
+      return [...next];
+    });
+  }
+
   const bulkStats = useMemo(() => {
     let valid = 0;
     let invalid = 0;
@@ -354,7 +369,22 @@ function TargetsPage() {
         <table className="w-full border-collapse text-left text-sm">
           <thead>
             <tr className="border-b border-border text-[11px] uppercase tracking-wide text-muted-foreground">
-              <th className="w-10 px-5 py-3" />
+              <th className="w-10 px-5 py-3 align-middle">
+                <div className="flex flex-col gap-0.5">
+                  <button
+                    className="text-left text-[10px] leading-tight hover:text-foreground"
+                    onClick={selectAll}
+                  >
+                    全选
+                  </button>
+                  <button
+                    className="text-left text-[10px] leading-tight hover:text-foreground"
+                    onClick={invertSelection}
+                  >
+                    反全选
+                  </button>
+                </div>
+              </th>
               <th className="px-3 py-3 font-medium">姓名</th>
               <th className="px-3 py-3 font-medium">手机号</th>
               <th className="px-3 py-3 font-medium">国家 / 地区</th>
