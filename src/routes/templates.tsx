@@ -29,14 +29,46 @@ export const Route = createFileRoute("/templates")({
 });
 
 function TemplatesPage() {
-  const { templates, addTemplate, updateTemplate, removeTemplate } = useSmsStore();
+  const { templates, addTemplate, updateTemplate, removeTemplate, setTemplatesEnabled } =
+    useSmsStore();
   const [editing, setEditing] = useState<Template | null | undefined>(undefined);
   const [name, setName] = useState("");
   const [content, setContent] = useState("");
+  const [query, setQuery] = useState("");
+  const [enabledFilter, setEnabledFilter] = useState<"all" | "enabled" | "disabled">("all");
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const areaRef = useRef<HTMLTextAreaElement>(null);
 
   const open = editing !== undefined;
-  const { pageItems, props: pageProps } = usePagination(templates);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return templates.filter((t) => {
+      if (enabledFilter === "enabled" && !t.enabled) return false;
+      if (enabledFilter === "disabled" && t.enabled) return false;
+      if (!q) return true;
+      return [t.name, t.content].some((v) => v.toLowerCase().includes(q));
+    });
+  }, [templates, query, enabledFilter]);
+
+  const { pageItems, props: pageProps } = usePagination(filtered);
+
+  // 选中项限定在当前筛选结果内，避免对看不见的数据误操作
+  const visibleIds = filtered.map((t) => t.id);
+  const selected = selectedIds.filter((id) => visibleIds.includes(id));
+  const pageAllSelected = pageItems.length > 0 && pageItems.every((t) => selected.includes(t.id));
+
+  function toggleOne(id: string) {
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  }
+
+  function togglePage(checked: boolean) {
+    const ids = pageItems.map((t) => t.id);
+    setSelectedIds((prev) =>
+      checked ? [...new Set([...prev, ...ids])] : prev.filter((x) => !ids.includes(x)),
+    );
+  }
+
 
   function openDrawer(tpl: Template | null) {
     setName(tpl?.name ?? "");
