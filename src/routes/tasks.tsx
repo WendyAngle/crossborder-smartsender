@@ -369,8 +369,8 @@ function TasksPage() {
                   </div>
                 )}
                 <div className="mt-2 text-right text-[10px] text-muted-foreground">
-                  {selected.length || 0} 个目标 ·{" "}
-                  {template ? countCredits(template.content, msgType) * (selected.length || 0) : 0}{" "}
+                  {selected.length || 0} 个目标 · {followUp ? "跟进回复" : "不跟进回复"} ·{" "}
+                  {template ? countCredits(template.content, followUp) * (selected.length || 0) : 0}{" "}
                   积分
                 </div>
               </div>
