@@ -52,6 +52,7 @@ const NAV = [
   { to: "/tasks", label: "任务管理" },
   { to: "/tasks2", label: "任务管理2" },
   { to: "/", label: "短信明细" },
+  { to: "/leads", label: "商机转化" },
   { to: "/templates", label: "短信模板" },
 ] as const;
 
