@@ -769,12 +769,14 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
       templateId,
       msgType,
       followUp,
+      varValues,
     }: {
       name: string;
       targetIds: string[];
       templateId: string;
       msgType: MsgType;
       followUp: boolean;
+      varValues?: Record<string, string>;
     }) => {
       setState((s) => {
         const tpl = s.templates.find((t) => t.id === templateId);
@@ -787,11 +789,13 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
           templateId,
           msgType,
           followUp,
+          varValues,
           createdAt: now,
         };
         const records: SmsRecord[] = targetIds.map((tid) => {
           const target = s.targets.find((t) => t.id === tid);
-          const content = renderTemplate(tpl.content, target?.name ?? "客户");
+          const content = renderTemplate(tpl.content, target?.name ?? "客户", varValues);
+
           return {
             id: uid(),
             targetId: tid,
