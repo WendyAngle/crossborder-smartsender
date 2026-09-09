@@ -13,7 +13,13 @@ export type Target = {
   name: string;
   phone: string;
   region: string;
+  /** 启用状态：禁用后不可被新任务选中，导入/新增默认启用 */
+  enabled: boolean;
 };
+
+/** 新增/导入/编辑目标时的输入（启用状态由系统维护） */
+export type TargetInput = Omit<Target, "id" | "enabled">;
+
 
 export type Template = {
   id: string;
