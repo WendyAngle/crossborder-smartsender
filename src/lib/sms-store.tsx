@@ -487,6 +487,8 @@ type Store = State & {
     followUp: boolean;
   }) => void;
   sendReply: (recordId: string, text: string) => void;
+  /** 将会话中对方回复标记为已读 */
+  markReplyRead: (recordId: string) => void;
   threadRecords: (threadId: string) => SmsRecord[];
   /** 该任务下每条群发短信的明细（含人工跟进回复） */
   taskRecords: (taskId: string) => SmsRecord[];
@@ -501,7 +503,7 @@ type Store = State & {
 export type ImportResult = { added: number; invalid: number; duplicated: number };
 
 const StoreContext = createContext<Store | null>(null);
-const KEY = "sms-console-state-v7";
+const KEY = "sms-console-state-v8";
 
 export const REACH_LABEL: Record<ReachStatus, string> = {
   untouched: "未触达",
@@ -758,8 +760,22 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
         replyZh: null,
         replyAt: null,
       };
-      return { ...s, records: [followUp, ...s.records] };
+      return {
+        ...s,
+        records: [
+          followUp,
+          // 我方已跟进回复，视为已读对方消息
+          ...s.records.map((r) => (r.id === recordId ? { ...r, replyRead: true } : r)),
+        ],
+      };
     });
+  }, []);
+
+  const markReplyRead = useCallback((recordId: string) => {
+    setState((s) => ({
+      ...s,
+      records: s.records.map((r) => (r.id === recordId ? { ...r, replyRead: true } : r)),
+    }));
   }, []);
 
   const value = useMemo<Store>(
