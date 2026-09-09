@@ -223,51 +223,27 @@ function TemplatesPage() {
             <button className="btn-primary px-3 py-1.5 text-xs" onClick={() => openDrawer(null)}>
               <span className="-ml-0.5 text-base leading-none">+</span> 新建模板
             </button>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2 border-b border-border bg-background/60 px-5 py-2.5 text-xs">
-          <label className="inline-flex items-center gap-2 text-muted-foreground">
-            <input
-              type="checkbox"
-              className="size-3.5 accent-[hsl(var(--primary))]"
-              aria-label="全选当前页"
-              checked={pageAllSelected}
-              onChange={(e) => togglePage(e.target.checked)}
-            />
-            全选本页
-          </label>
-          <span className="text-muted-foreground">
-            已选择 <span className="font-semibold text-foreground">{selected.length}</span> 个
-          </span>
-          <button
-            className="btn-ghost px-3 py-1.5 text-xs disabled:opacity-40"
-            disabled={selected.length === 0}
-            onClick={() => {
-              setTemplatesEnabled(selected, true);
-              setSelectedIds([]);
-            }}
-          >
-            批量启用
-          </button>
-          <button
-            className="btn-ghost px-3 py-1.5 text-xs disabled:opacity-40"
-            disabled={selected.length === 0}
-            onClick={() => {
-              setTemplatesEnabled(selected, false);
-              setSelectedIds([]);
-            }}
-          >
-            批量禁用
-          </button>
-          {selected.length > 0 && (
             <button
-              className="btn-ghost px-3 py-1.5 text-xs text-muted-foreground"
-              onClick={() => setSelectedIds([])}
+              className="btn-ghost px-3 py-1.5 text-xs disabled:opacity-40"
+              disabled={selected.length === 0}
+              onClick={() => {
+                setTemplatesEnabled(selected, true);
+                setSelectedIds([]);
+              }}
             >
-              取消选择
+              批量启用
             </button>
-          )}
+            <button
+              className="btn-ghost px-3 py-1.5 text-xs disabled:opacity-40"
+              disabled={selected.length === 0}
+              onClick={() => {
+                setTemplatesEnabled(selected, false);
+                setSelectedIds([]);
+              }}
+            >
+              批量禁用
+            </button>
+          </div>
         </div>
 
         <div className="overflow-x-auto">
