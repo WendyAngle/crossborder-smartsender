@@ -249,7 +249,7 @@ function TasksPage() {
 
   return (
     <AppShell
-      title="任务管理"
+      title="任务管理2"
       subtitle="批量发信任务与内容预览"
       drawer={
         open ? (
