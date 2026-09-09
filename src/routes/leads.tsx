@@ -125,12 +125,11 @@ function LeadsPage() {
   }
 
   const totalUnread = leads.reduce((s, l) => s + l.unread, 0);
-  const pendingCount = leads.filter((l) => l.stage === "pending").length;
 
   return (
     <AppShell
       title="会话跟进"
-      subtitle={`${leads.length} 个有回复的会话 · ${pendingCount} 个待跟进 · ${totalUnread} 条未读`}
+      subtitle={`${leads.length} 个有回复的会话 · ${totalUnread} 条未读`}
     >
       <div className="flex h-[calc(100vh-8.5rem)] min-h-[560px] overflow-hidden rounded-2xl border border-border bg-card">
         {/* 会话列表 */}
