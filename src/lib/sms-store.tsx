@@ -198,25 +198,38 @@ export function formatTime(value: string | null) {
 }
 
 const initialTargets: Target[] = [
-  { id: "t1", name: "Sophia Miller", phone: "+1 305 555 0182", region: "美国" },
-  { id: "t2", name: "Carlos Mendez", phone: "+34 600 555 019", region: "西班牙" },
-  { id: "t3", name: "Emma Wilson", phone: "+44 7700 555 014", region: "英国" },
-  { id: "t4", name: "Ahmed Hassan", phone: "+971 50 555 0121", region: "阿联酋" },
-  { id: "t5", name: "李静", phone: "+86 138 0000 0777", region: "中国" },
-  { id: "t6", name: "Hans Müller", phone: "+49 170 555 0234", region: "德国" },
-  { id: "t7", name: "Marie Dubois", phone: "+33 6 55 50 12 34", region: "法国" },
-  { id: "t8", name: "Luca Rossi", phone: "+39 333 555 0456", region: "意大利" },
-  { id: "t9", name: "Yuki Tanaka", phone: "+81 90 5550 0789", region: "日本" },
-  { id: "t10", name: "Kim Min-jun", phone: "+82 10 5550 0567", region: "韩国" },
-  { id: "t11", name: "Raj Patel", phone: "+91 98765 43210", region: "印度" },
-  { id: "t12", name: "Olivia Smith", phone: "+61 412 555 098", region: "澳大利亚" },
-  { id: "t13", name: "Siti Binti Abdullah", phone: "+60 12 555 0678", region: "马来西亚" },
-  { id: "t14", name: "Nguyen Van An", phone: "+84 98 555 0321", region: "越南" },
-  { id: "t15", name: "王伟", phone: "+86 139 0000 0888", region: "中国" },
-  { id: "t16", name: "Chen Wei Ling", phone: "+65 9123 4567", region: "新加坡" },
-  { id: "t17", name: "Anastasia Ivanova", phone: "+7 915 555 0456", region: "俄罗斯" },
-  { id: "t18", name: "Pedro Almeida", phone: "+55 11 95550 1234", region: "巴西" },
+  { id: "t1", name: "Sophia Miller", phone: "+1 305 555 0182", region: "美国", enabled: true },
+  { id: "t2", name: "Carlos Mendez", phone: "+34 600 555 019", region: "西班牙", enabled: true },
+  { id: "t3", name: "Emma Wilson", phone: "+44 7700 555 014", region: "英国", enabled: true },
+  { id: "t4", name: "Ahmed Hassan", phone: "+971 50 555 0121", region: "阿联酋", enabled: true },
+  { id: "t5", name: "李静", phone: "+86 138 0000 0777", region: "中国", enabled: true },
+  { id: "t6", name: "Hans Müller", phone: "+49 170 555 0234", region: "德国", enabled: true },
+  { id: "t7", name: "Marie Dubois", phone: "+33 6 55 50 12 34", region: "法国", enabled: true },
+  { id: "t8", name: "Luca Rossi", phone: "+39 333 555 0456", region: "意大利", enabled: false },
+  { id: "t9", name: "Yuki Tanaka", phone: "+81 90 5550 0789", region: "日本", enabled: true },
+  { id: "t10", name: "Kim Min-jun", phone: "+82 10 5550 0567", region: "韩国", enabled: true },
+  { id: "t11", name: "Raj Patel", phone: "+91 98765 43210", region: "印度", enabled: true },
+  { id: "t12", name: "Olivia Smith", phone: "+61 412 555 098", region: "澳大利亚", enabled: true },
+  {
+    id: "t13",
+    name: "Siti Binti Abdullah",
+    phone: "+60 12 555 0678",
+    region: "马来西亚",
+    enabled: true,
+  },
+  { id: "t14", name: "Nguyen Van An", phone: "+84 98 555 0321", region: "越南", enabled: false },
+  { id: "t15", name: "王伟", phone: "+86 139 0000 0888", region: "中国", enabled: true },
+  { id: "t16", name: "Chen Wei Ling", phone: "+65 9123 4567", region: "新加坡", enabled: true },
+  {
+    id: "t17",
+    name: "Anastasia Ivanova",
+    phone: "+7 915 555 0456",
+    region: "俄罗斯",
+    enabled: true,
+  },
+  { id: "t18", name: "Pedro Almeida", phone: "+55 11 95550 1234", region: "巴西", enabled: true },
 ];
+
 
 const initialTemplates: Template[] = [
   {
