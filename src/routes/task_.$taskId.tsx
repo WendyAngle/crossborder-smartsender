@@ -16,7 +16,7 @@ import {
   type SmsRecord,
 } from "@/lib/sms-store";
 
-export const Route = createFileRoute("/tasks2_/$taskId")({
+export const Route = createFileRoute("/task_/$taskId")({
   head: () => ({
     meta: [
       { title: "任务目标名单 · 任务管理" },
@@ -88,7 +88,7 @@ function Task2TargetsPage() {
         <section className="panel px-5 py-16 text-center text-sm text-muted-foreground">
           没有找到该任务，可能已被删除。
           <div className="mt-4">
-            <Link to="/tasks2" className="btn-ghost px-3 py-1.5 text-xs">
+            <Link to="/task" className="btn-ghost px-3 py-1.5 text-xs">
               返回任务管理
             </Link>
           </div>
@@ -106,7 +106,7 @@ function Task2TargetsPage() {
       }
     >
       <div className="mb-4 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-        <Link to="/tasks2" className="btn-ghost px-3 py-1.5 text-xs">
+        <Link to="/task" className="btn-ghost px-3 py-1.5 text-xs">
           ← 返回任务管理
         </Link>
         {stat && <TaskStatusPill status={stat.status} />}
