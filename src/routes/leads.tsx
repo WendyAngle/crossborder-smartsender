@@ -60,7 +60,7 @@ function relativeTime(iso: string) {
   if (hour < 24) return `${hour} 小时前`;
   const day = Math.floor(hour / 24);
   if (day < 30) return `${day} 天前`;
-  return formatTime(iso).slice(0, 10);
+  return (formatTime(iso) ?? "").slice(0, 10);
 }
 
 function LeadsPage() {
