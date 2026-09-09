@@ -158,6 +158,16 @@ function DetailsPage() {
     }
   }
 
+  type Row = {
+    key: string;
+    record: SmsRecord;
+    role: "receiver" | "sender";
+    content: string;
+    contentZh: string | null;
+    msgType: MsgType;
+    time: string;
+  };
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     const list = records.filter((r) => {
@@ -180,15 +190,41 @@ function DetailsPage() {
       const t = new Date(r.createdAt).getTime();
       latest.set(r.threadId, Math.max(latest.get(r.threadId) ?? 0, t));
     }
-    return [...list].sort(
+    const sorted = [...list].sort(
       (a, b) =>
         (latest.get(b.threadId) ?? 0) - (latest.get(a.threadId) ?? 0) ||
         a.threadId.localeCompare(b.threadId) ||
         a.seq - b.seq,
     );
+    // 一条内容一条记录：我方外发与对方回复各自独立成行
+    const rows: Row[] = [];
+    for (const r of sorted) {
+      rows.push({
+        key: `${r.id}-out`,
+        record: r,
+        role: "receiver",
+        content: r.content,
+        contentZh: r.contentZh,
+        msgType: r.msgType ?? "text",
+        time: r.createdAt,
+      });
+      if (r.reply) {
+        rows.push({
+          key: `${r.id}-reply`,
+          record: r,
+          role: "sender",
+          content: r.reply,
+          contentZh: r.replyZh,
+          msgType: "text",
+          time: r.replyAt ?? r.createdAt,
+        });
+      }
+    }
+    return rows;
   }, [records, query, statusFilter, replyFilter, typeFilter, targetById]);
 
   const { pageItems, props: pageProps } = usePagination(filtered);
+
 
   const delivered = records.filter((r) => r.status === "delivered").length;
   const replies = records.filter((r) => r.reply).length;
