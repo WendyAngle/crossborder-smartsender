@@ -637,16 +637,16 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
     }
   }, [state]);
 
-  const addTarget = useCallback((t: Omit<Target, "id">) => {
+  const addTarget = useCallback((t: TargetInput) => {
     if (!isValidTargetRow(t)) return false;
     setState((s) => ({
       ...s,
-      targets: [{ id: uid(), ...t, phone: t.phone.trim() }, ...s.targets],
+      targets: [{ id: uid(), ...t, phone: t.phone.trim(), enabled: true }, ...s.targets],
     }));
     return true;
   }, []);
 
-  const importTargets = useCallback((rows: Omit<Target, "id">[]) => {
+  const importTargets = useCallback((rows: TargetInput[]) => {
     const result: ImportResult = { added: 0, invalid: 0, duplicated: 0 };
     setState((s) => {
       const seen = new Set(s.targets.map((t) => digitsOf(t.phone)));
@@ -662,7 +662,7 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
           continue;
         }
         seen.add(key);
-        accepted.push({ id: uid(), ...r, phone: r.phone.trim() });
+        accepted.push({ id: uid(), ...r, phone: r.phone.trim(), enabled: true });
       }
       result.added = accepted.length;
       if (accepted.length === 0) return s;
@@ -671,11 +671,13 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
     return result;
   }, []);
 
-  const updateTarget = useCallback((id: string, t: Omit<Target, "id">) => {
+  const updateTarget = useCallback((id: string, t: TargetInput) => {
     if (!isValidTargetRow(t)) return false;
     setState((s) => ({
       ...s,
-      targets: s.targets.map((x) => (x.id === id ? { id, ...t, phone: t.phone.trim() } : x)),
+      targets: s.targets.map((x) =>
+        x.id === id ? { ...x, ...t, id, phone: t.phone.trim() } : x,
+      ),
     }));
     return true;
   }, []);
@@ -683,6 +685,15 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
   const removeTarget = useCallback((id: string) => {
     setState((s) => ({ ...s, targets: s.targets.filter((x) => x.id !== id) }));
   }, []);
+
+  const setTargetsEnabled = useCallback((ids: string[], enabled: boolean) => {
+    const set = new Set(ids);
+    setState((s) => ({
+      ...s,
+      targets: s.targets.map((x) => (set.has(x.id) ? { ...x, enabled } : x)),
+    }));
+  }, []);
+
 
   const addTemplate = useCallback((t: Omit<Template, "id">) => {
     setState((s) => ({ ...s, templates: [{ id: uid(), ...t }, ...s.templates] }));
