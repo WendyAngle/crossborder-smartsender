@@ -268,8 +268,8 @@ function DetailsPage() {
                     onClick={() => {
                       markReplyRead(r.id);
                       setReplyTo(r);
-                      setReplyText("");
                     }}
+
                   >
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-1.5">
