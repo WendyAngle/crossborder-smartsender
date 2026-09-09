@@ -308,34 +308,38 @@ function TasksPage() {
 
             <div>
               <label className="text-xs font-medium text-muted-foreground">发信内容类型</label>
-              <div className="mt-1.5 grid grid-cols-2 gap-2">
-                {(["text", "image"] as MsgType[]).map((v) => (
-                  <label
-                    key={v}
-                    className={`flex cursor-pointer items-start gap-2 rounded-xl border px-3 py-2.5 text-xs transition-colors ${
-                      msgType === v
-                        ? "border-primary bg-primary/10"
-                        : "border-border hover:bg-background"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="msgType"
-                      className="mt-0.5 h-3.5 w-3.5 accent-primary"
-                      checked={msgType === v}
-                      onChange={() => setMsgType(v)}
-                    />
-                    <span>
-                      <span className="block font-medium">{v === "text" ? "文本" : "图片"}</span>
-                      <span className="mt-0.5 block text-[11px] leading-snug text-muted-foreground">
-                        {v === "text"
-                          ? "普通文本短信，按字符计费"
-                          : `将模板内容自动生成营销图片下发，每条加收 ${IMAGE_SURCHARGE} 积分`}
-                      </span>
-                    </span>
-                  </label>
-                ))}
-              </div>
+              <select
+                className="field mt-1.5"
+                value={msgType}
+                onChange={(e) => setMsgType(e.target.value as MsgType)}
+              >
+                <option value="text">文本</option>
+                <option value="image">图片</option>
+              </select>
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                {msgType === "text"
+                  ? "普通文本短信下发"
+                  : "将模板内容排版成营销图片下发"}
+                ，两种类型积分消耗相同
+              </p>
+            </div>
+
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">跟进回复</label>
+              <label className="mt-1.5 flex cursor-pointer items-start gap-2 rounded-xl border border-border px-3 py-2.5 text-xs transition-colors hover:bg-background">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 h-3.5 w-3.5 accent-primary"
+                  checked={followUp}
+                  onChange={(e) => setFollowUp(e.target.checked)}
+                />
+                <span>
+                  <span className="block font-medium">是否跟进回复</span>
+                  <span className="mt-0.5 block text-[11px] leading-snug text-muted-foreground">
+                    勾选后可对客户回复做人工跟进，单条积分为不跟进的 {FOLLOW_UP_MULTIPLIER} 倍
+                  </span>
+                </span>
+              </label>
             </div>
 
             <div>
