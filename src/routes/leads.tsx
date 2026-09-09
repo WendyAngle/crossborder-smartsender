@@ -198,9 +198,9 @@ function LeadsPage() {
                       )}
                     </div>
                     <span
-                      className={`mt-1.5 inline-flex rounded-md px-1.5 py-0.5 text-[10px] ${STAGE_CLASS[l.stage]}`}
+                      className={`mt-1.5 inline-flex rounded-md px-1.5 py-0.5 text-[10px] ${STATUS_CLASS[l.status]}`}
                     >
-                      {STAGE_LABEL[l.stage]}
+                      {STATUS_LABEL[l.status]}
                     </span>
                   </div>
                 </button>
