@@ -50,8 +50,11 @@ export type Task = {
   msgType: MsgType;
   /** 是否跟进回复：开启后可对客户回复做人工跟进，单条积分按 1.5 倍计费 */
   followUp: boolean;
+  /** 本次任务为模板变量填写的取值（{联系人} 按目标姓名自动填充，不在此存储） */
+  varValues?: Record<string, string>;
   createdAt: string;
 };
+
 
 /**
  * sending  = 提交网关中
