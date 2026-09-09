@@ -709,20 +709,29 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
 
-  const addTemplate = useCallback((t: Omit<Template, "id">) => {
-    setState((s) => ({ ...s, templates: [{ id: uid(), ...t }, ...s.templates] }));
+  const addTemplate = useCallback((t: TemplateInput) => {
+    setState((s) => ({ ...s, templates: [{ id: uid(), ...t, enabled: true }, ...s.templates] }));
   }, []);
 
-  const updateTemplate = useCallback((id: string, t: Omit<Template, "id">) => {
+  const updateTemplate = useCallback((id: string, t: TemplateInput) => {
     setState((s) => ({
       ...s,
-      templates: s.templates.map((x) => (x.id === id ? { id, ...t } : x)),
+      templates: s.templates.map((x) => (x.id === id ? { ...x, ...t, id } : x)),
     }));
   }, []);
 
   const removeTemplate = useCallback((id: string) => {
     setState((s) => ({ ...s, templates: s.templates.filter((x) => x.id !== id) }));
   }, []);
+
+  const setTemplatesEnabled = useCallback((ids: string[], enabled: boolean) => {
+    const set = new Set(ids);
+    setState((s) => ({
+      ...s,
+      templates: s.templates.map((x) => (set.has(x.id) ? { ...x, enabled } : x)),
+    }));
+  }, []);
+
 
   const createTask = useCallback(
     ({
