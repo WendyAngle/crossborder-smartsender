@@ -339,50 +339,54 @@ function TargetsPage() {
           </div>
         </div>
 
-        {selected.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2 border-b border-border bg-primary/5 px-5 py-2.5 text-xs">
-            <span className="text-muted-foreground">
-              已选择 <span className="font-semibold text-foreground">{selected.length}</span> 条
-            </span>
-            <button
-              className="btn-ghost px-3 py-1.5 text-xs"
-              onClick={() => {
-                setTargetsEnabled(selected, true);
-                setSelectedIds([]);
-              }}
-            >
-              批量启用
-            </button>
-            <button
-              className="btn-ghost px-3 py-1.5 text-xs"
-              onClick={() => {
-                setTargetsEnabled(selected, false);
-                setSelectedIds([]);
-              }}
-            >
-              批量禁用
-            </button>
+        <div className="flex flex-wrap items-center gap-2 border-b border-border bg-background/60 px-5 py-2.5 text-xs">
+          <label className="inline-flex items-center gap-2 text-muted-foreground">
+            <input
+              type="checkbox"
+              className="size-3.5 accent-[hsl(var(--primary))]"
+              aria-label="全选当前页"
+              checked={pageAllSelected}
+              onChange={(e) => togglePage(e.target.checked)}
+            />
+            全选本页
+          </label>
+          <span className="text-muted-foreground">
+            已选择 <span className="font-semibold text-foreground">{selected.length}</span> 条
+          </span>
+          <button
+            className="btn-ghost px-3 py-1.5 text-xs disabled:opacity-40"
+            disabled={selected.length === 0}
+            onClick={() => {
+              setTargetsEnabled(selected, true);
+              setSelectedIds([]);
+            }}
+          >
+            批量启用
+          </button>
+          <button
+            className="btn-ghost px-3 py-1.5 text-xs disabled:opacity-40"
+            disabled={selected.length === 0}
+            onClick={() => {
+              setTargetsEnabled(selected, false);
+              setSelectedIds([]);
+            }}
+          >
+            批量禁用
+          </button>
+          {selected.length > 0 && (
             <button
               className="btn-ghost px-3 py-1.5 text-xs text-muted-foreground"
               onClick={() => setSelectedIds([])}
             >
               取消选择
             </button>
-          </div>
-        )}
+          )}
+        </div>
 
         <table className="w-full border-collapse text-left text-sm">
           <thead>
             <tr className="border-b border-border text-[11px] uppercase tracking-wide text-muted-foreground">
-              <th className="w-10 px-5 py-3">
-                <input
-                  type="checkbox"
-                  className="size-3.5 accent-[hsl(var(--primary))]"
-                  aria-label="全选当前页"
-                  checked={pageAllSelected}
-                  onChange={(e) => togglePage(e.target.checked)}
-                />
-              </th>
+              <th className="w-10 px-5 py-3" />
               <th className="px-3 py-3 font-medium">姓名</th>
               <th className="px-3 py-3 font-medium">手机号</th>
               <th className="px-3 py-3 font-medium">国家 / 地区</th>
