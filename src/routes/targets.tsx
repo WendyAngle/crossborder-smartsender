@@ -368,21 +368,15 @@ function TargetsPage() {
           <thead>
             <tr className="border-b border-border text-[11px] uppercase tracking-wide text-muted-foreground">
               <th className="w-10 px-5 py-3 align-middle">
-                <div className="flex flex-col gap-0.5">
-                  <button
-                    className="text-left text-[10px] leading-tight hover:text-foreground"
-                    onClick={selectAll}
-                  >
-                    全选
-                  </button>
-                  <button
-                    className="text-left text-[10px] leading-tight hover:text-foreground"
-                    onClick={invertSelection}
-                  >
-                    反全选
-                  </button>
-                </div>
+                <input
+                  type="checkbox"
+                  className="size-3.5 accent-[hsl(var(--primary))]"
+                  aria-label="全选当前页"
+                  checked={pageAllSelected}
+                  onChange={togglePageAll}
+                />
               </th>
+
               <th className="px-3 py-3 font-medium">姓名</th>
               <th className="px-3 py-3 font-medium">手机号</th>
               <th className="px-3 py-3 font-medium">国家 / 地区</th>
