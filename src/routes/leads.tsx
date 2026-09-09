@@ -102,7 +102,7 @@ function LeadsPage() {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return leads.filter((l) => {
-      if (stage !== "all" && l.stage !== stage) return false;
+      if (status !== "all" && l.status !== status) return false;
       if (!q) return true;
       const t = targetById(l.targetId);
       return (
@@ -113,7 +113,7 @@ function LeadsPage() {
         (l.lastReply.replyZh ?? "").toLowerCase().includes(q)
       );
     });
-  }, [leads, query, stage, targetById]);
+  }, [leads, query, status, targetById]);
 
   const active = filtered.find((l) => l.threadId === activeId) ?? filtered[0] ?? null;
 
