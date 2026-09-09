@@ -83,8 +83,7 @@ function LeadsPage() {
       const unread = replies.filter((r) => !r.replyRead).length;
       const last = sorted[sorted.length - 1]!;
       const lastAt = Math.max(timeOf(lastReply.replyAt), timeOf(last.createdAt));
-      const stageOf: LeadStage =
-        unread > 0 ? "pending" : last.kind === "reply" ? "following" : "watching";
+      const statusOf: LeadStatus = unread > 0 ? "unread" : "read";
       out.push({
         threadId,
         targetId: sorted[0]!.targetId,
@@ -92,7 +91,7 @@ function LeadsPage() {
         unread,
         lastReply,
         lastAt: new Date(lastAt).toISOString(),
-        stage: stageOf,
+        status: statusOf,
       });
     }
     return out.sort(
