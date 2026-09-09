@@ -36,6 +36,8 @@ export type Task = {
   templateId: string;
   /** 发信内容类型，缺省视为 text（兼容历史数据） */
   msgType: MsgType;
+  /** 是否跟进回复：开启后可对客户回复做人工跟进，单条积分按 1.5 倍计费 */
+  followUp: boolean;
   createdAt: string;
 };
 
@@ -160,13 +162,17 @@ export function renderTemplate(content: string, contactName = "Sophia") {
   return out;
 }
 
-/** 图片短信（MMS）在文本计费基础上加收图片附加费 */
-export const IMAGE_SURCHARGE = 30;
+/** 开启「跟进回复」的任务按基础积分的 1.5 倍计费（含后续人工跟进短信额度） */
+export const FOLLOW_UP_MULTIPLIER = 1.5;
 
-export function countCredits(content: string, msgType: MsgType = "text") {
+/**
+ * 单条短信积分：只与内容长度、是否跟进回复相关。
+ * 文本与图片两种发信内容类型积分消耗相同。
+ */
+export function countCredits(content: string, followUp = true) {
   const len = renderTemplate(content).length;
   const base = Math.max(1, Math.ceil(len / 70)) * 12;
-  return msgType === "image" ? base + IMAGE_SURCHARGE : base;
+  return followUp ? Math.round(base * FOLLOW_UP_MULTIPLIER) : base;
 }
 
 // 固定基准时间，避免服务端与浏览器渲染出不同的示例时间
@@ -234,6 +240,7 @@ const initialTasks: Task[] = [
     targetIds: ["t1", "t5"],
     templateId: "tpl1",
     msgType: "text",
+    followUp: true,
     createdAt: ts(180),
   },
   {
@@ -242,6 +249,7 @@ const initialTasks: Task[] = [
     targetIds: ["t2"],
     templateId: "tpl2",
     msgType: "text",
+    followUp: false,
     createdAt: ts(120),
   },
   {
@@ -250,6 +258,7 @@ const initialTasks: Task[] = [
     targetIds: ["t3", "t9", "t12"],
     templateId: "tpl3",
     msgType: "image",
+    followUp: true,
     createdAt: ts(75),
   },
 ];
@@ -267,7 +276,7 @@ const initialRecords: SmsRecord[] = [
     content:
       "[AirHui] Hi Sophia, the AirMax cross-border line you follow is back in stock. Check availability: airhui.shop",
     contentZh: "【信汇】Sophia，您关注的 AirMax 跨境直邮专线已到货，前往 airhui.shop 查看库存。",
-    credits: 12,
+    credits: 18,
     createdAt: ts(96),
     succeededAt: ts(95),
     failReason: null,
@@ -324,7 +333,7 @@ const initialRecords: SmsRecord[] = [
     status: "delivered",
     content: "[AirHui] Emma, the AirMax line you watched is back in stock. View stock at airhui.shop",
     contentZh: "【信汇】Emma，您关注的 AirMax 跨境直邮专线已到货，前往 airhui.shop 查看库存。",
-    credits: 42,
+    credits: 18,
     createdAt: ts(72),
     succeededAt: ts(71),
     failReason: null,
@@ -344,7 +353,7 @@ const initialRecords: SmsRecord[] = [
     content:
       "【信匯】Yukiさん、初回ご注文が30元OFF。AirMax越境直送便を期間限定で公開中、airhui.shop へ →",
     contentZh: "【信汇】Yuki，首单立减 30 元，AirMax 跨境直邮专线限时开启，点击 airhui.shop 抢购 →",
-    credits: 42,
+    credits: 18,
     createdAt: ts(64),
     succeededAt: ts(63),
     failReason: null,
@@ -383,7 +392,7 @@ const initialRecords: SmsRecord[] = [
     status: "delivered",
     content: "【信汇】李静，首单立减 30 元，AirMax 跨境直邮专线限时开启，点击 airhui.shop 抢购 →",
     contentZh: null,
-    credits: 12,
+    credits: 18,
     createdAt: ts(50),
     succeededAt: ts(49),
     failReason: null,
@@ -422,7 +431,7 @@ const initialRecords: SmsRecord[] = [
     status: "sent",
     content: "[AirHui] Olivia, 50% off cross-border direct shipping, limited time. Details: airhui.shop/promo",
     contentZh: "【信汇】Olivia，跨境直邮 5 折限时开启，详情见 airhui.shop/promo",
-    credits: 45,
+    credits: 23,
     createdAt: ts(36),
     succeededAt: null,
     failReason: null,
@@ -471,6 +480,7 @@ type Store = State & {
     targetIds: string[];
     templateId: string;
     msgType: MsgType;
+    followUp: boolean;
   }) => void;
   sendReply: (recordId: string, text: string) => void;
   threadRecords: (threadId: string) => SmsRecord[];
@@ -487,7 +497,7 @@ type Store = State & {
 export type ImportResult = { added: number; invalid: number; duplicated: number };
 
 const StoreContext = createContext<Store | null>(null);
-const KEY = "sms-console-state-v6";
+const KEY = "sms-console-state-v7";
 
 export const REACH_LABEL: Record<ReachStatus, string> = {
   untouched: "未触达",
@@ -667,17 +677,27 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
       targetIds,
       templateId,
       msgType,
+      followUp,
     }: {
       name: string;
       targetIds: string[];
       templateId: string;
       msgType: MsgType;
+      followUp: boolean;
     }) => {
       setState((s) => {
         const tpl = s.templates.find((t) => t.id === templateId);
         if (!tpl) return s;
         const now = new Date().toISOString();
-        const task: Task = { id: uid(), name, targetIds, templateId, msgType, createdAt: now };
+        const task: Task = {
+          id: uid(),
+          name,
+          targetIds,
+          templateId,
+          msgType,
+          followUp,
+          createdAt: now,
+        };
         const records: SmsRecord[] = targetIds.map((tid) => {
           const target = s.targets.find((t) => t.id === tid);
           const content = renderTemplate(tpl.content, target?.name ?? "客户");
@@ -692,7 +712,7 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
             status: "sending",
             content,
             contentZh: null,
-            credits: countCredits(tpl.content, msgType),
+            credits: countCredits(tpl.content, followUp),
             createdAt: now,
             succeededAt: null,
             failReason: null,
@@ -726,7 +746,7 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
         status: "sending",
         content: text,
         contentZh: null,
-        credits: countCredits(text),
+        credits: countCredits(text, false),
         createdAt: now,
         succeededAt: null,
         failReason: null,

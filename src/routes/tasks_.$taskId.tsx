@@ -94,6 +94,7 @@ function TaskTargetsPage() {
         <span className="inline-flex items-center gap-1.5">
           内容类型：<MsgTypePill type={task.msgType ?? "text"} />
         </span>
+        <span>跟进回复：{(task.followUp ?? true) ? "是（积分 1.5 倍）" : "否"}</span>
         <span className="tabular-nums">创建时间：{formatTime(task.createdAt)}</span>
         <span className="tabular-nums">最近发送：{formatTime(stat?.lastAt ?? null) ?? "—"}</span>
       </div>

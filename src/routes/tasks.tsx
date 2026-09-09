@@ -6,7 +6,7 @@ import { MsgTypePill, SmsPoster } from "@/components/sms-image";
 import { TaskStatusCell } from "@/components/task-status";
 import {
   autoTaskName,
-  IMAGE_SURCHARGE,
+  FOLLOW_UP_MULTIPLIER,
   TASK_STATUS_LABEL,
   countCredits,
   formatTime,
@@ -193,6 +193,7 @@ function TasksPage() {
   const [selected, setSelected] = useState<string[]>([]);
   const [templateId, setTemplateId] = useState(templates[0]?.id ?? "");
   const [msgType, setMsgType] = useState<MsgType>("text");
+  const [followUp, setFollowUp] = useState(true);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | TaskStatus>("all");
   const [typeFilter, setTypeFilter] = useState<"all" | MsgType>("all");
@@ -216,13 +217,13 @@ function TasksPage() {
     setSelected([]);
     setTemplateId(templates[0]?.id ?? "");
     setMsgType("text");
+    setFollowUp(true);
     setOpen(true);
   }
 
-
   function submit() {
     if (!taskName.trim() || selected.length === 0 || !templateId) return;
-    createTask({ name: taskName.trim(), targetIds: selected, templateId, msgType });
+    createTask({ name: taskName.trim(), targetIds: selected, templateId, msgType, followUp });
     setOpen(false);
   }
 
@@ -307,34 +308,38 @@ function TasksPage() {
 
             <div>
               <label className="text-xs font-medium text-muted-foreground">发信内容类型</label>
-              <div className="mt-1.5 grid grid-cols-2 gap-2">
-                {(["text", "image"] as MsgType[]).map((v) => (
-                  <label
-                    key={v}
-                    className={`flex cursor-pointer items-start gap-2 rounded-xl border px-3 py-2.5 text-xs transition-colors ${
-                      msgType === v
-                        ? "border-primary bg-primary/10"
-                        : "border-border hover:bg-background"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="msgType"
-                      className="mt-0.5 h-3.5 w-3.5 accent-primary"
-                      checked={msgType === v}
-                      onChange={() => setMsgType(v)}
-                    />
-                    <span>
-                      <span className="block font-medium">{v === "text" ? "文本" : "图片"}</span>
-                      <span className="mt-0.5 block text-[11px] leading-snug text-muted-foreground">
-                        {v === "text"
-                          ? "普通文本短信，按字符计费"
-                          : `将模板内容自动生成营销图片下发，每条加收 ${IMAGE_SURCHARGE} 积分`}
-                      </span>
-                    </span>
-                  </label>
-                ))}
-              </div>
+              <select
+                className="field mt-1.5"
+                value={msgType}
+                onChange={(e) => setMsgType(e.target.value as MsgType)}
+              >
+                <option value="text">文本</option>
+                <option value="image">图片</option>
+              </select>
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                {msgType === "text"
+                  ? "普通文本短信下发"
+                  : "将模板内容排版成营销图片下发"}
+                ，两种类型积分消耗相同
+              </p>
+            </div>
+
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">跟进回复</label>
+              <label className="mt-1.5 flex cursor-pointer items-start gap-2 rounded-xl border border-border px-3 py-2.5 text-xs transition-colors hover:bg-background">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 h-3.5 w-3.5 accent-primary"
+                  checked={followUp}
+                  onChange={(e) => setFollowUp(e.target.checked)}
+                />
+                <span>
+                  <span className="block font-medium">是否跟进回复</span>
+                  <span className="mt-0.5 block text-[11px] leading-snug text-muted-foreground">
+                    勾选后可对客户回复做人工跟进，单条积分为不跟进的 {FOLLOW_UP_MULTIPLIER} 倍
+                  </span>
+                </span>
+              </label>
             </div>
 
             <div>
@@ -364,8 +369,8 @@ function TasksPage() {
                   </div>
                 )}
                 <div className="mt-2 text-right text-[10px] text-muted-foreground">
-                  {selected.length || 0} 个目标 ·{" "}
-                  {template ? countCredits(template.content, msgType) * (selected.length || 0) : 0}{" "}
+                  {selected.length || 0} 个目标 · {followUp ? "跟进回复" : "不跟进回复"} ·{" "}
+                  {template ? countCredits(template.content, followUp) * (selected.length || 0) : 0}{" "}
                   积分
                 </div>
               </div>
@@ -440,6 +445,7 @@ function TasksPage() {
               <th className="px-3 py-3 font-medium">目标数</th>
               <th className="px-3 py-3 font-medium">发信模板</th>
               <th className="px-3 py-3 font-medium">内容类型</th>
+              <th className="px-3 py-3 font-medium">跟进回复</th>
               <th className="px-3 py-3 font-medium">任务状态</th>
               <th className="px-3 py-3 font-medium">预计积分</th>
               <th className="px-3 py-3 font-medium">创建时间</th>
@@ -466,10 +472,23 @@ function TasksPage() {
                     <MsgTypePill type={task.msgType ?? "text"} />
                   </td>
                   <td className="px-3 py-3">
+                    <span
+                      className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium ${
+                        (task.followUp ?? true)
+                          ? "bg-primary/15 text-primary"
+                          : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      {(task.followUp ?? true) ? "跟进" : "不跟进"}
+                    </span>
+                  </td>
+                  <td className="px-3 py-3">
                     <TaskStatusCell stat={stat} />
                   </td>
                   <td className="px-3 py-3 tabular-nums text-muted-foreground">
-                    {tpl ? countCredits(tpl.content, task.msgType ?? "text") * task.targetIds.length : 0}
+                    {tpl
+                      ? countCredits(tpl.content, task.followUp ?? true) * task.targetIds.length
+                      : 0}
                   </td>
                   <td className="whitespace-nowrap px-3 py-3 text-xs tabular-nums text-muted-foreground">
                     {formatTime(task.createdAt)}
@@ -488,7 +507,7 @@ function TasksPage() {
             })}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-5 py-12 text-center text-sm text-muted-foreground">
+                <td colSpan={9} className="px-5 py-12 text-center text-sm text-muted-foreground">
                   {tasks.length === 0
                     ? "暂无任务，点击「新建任务」开始发信"
                     : "没有符合筛选条件的任务，试试调整搜索或状态筛选"}
