@@ -447,7 +447,7 @@ function DetailsPage() {
                           {isFollowUp ? `人工回复 #${r.seq}` : "任务群发"}
                         </span>
                       </div>
-                      <div className={`text-xs text-muted-foreground ${isFollowUp ? "pl-6" : ""}`}>
+                      <div className="text-xs text-muted-foreground">
                         {t ? `${t.phone} · ${t.region}` : "—"}
                       </div>
                     </td>
