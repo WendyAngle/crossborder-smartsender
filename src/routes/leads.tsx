@@ -44,7 +44,7 @@ type Lead = {
   unread: number;
   lastReply: SmsRecord;
   lastAt: string;
-  stage: LeadStage;
+  status: LeadStatus;
 };
 
 const timeOf = (v: string | null | undefined) => (v ? new Date(v).getTime() : 0);
