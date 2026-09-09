@@ -236,23 +236,28 @@ const initialTemplates: Template[] = [
     id: "tpl1",
     name: "新客首单立减",
     content: "【信汇】{联系人}，首单立减 30 元，{我方产品} 限时开启，点击 {官网链接} 抢购 →",
+    enabled: true,
   },
   {
     id: "tpl2",
     name: "限时折扣",
     content: "【信汇】{联系人}，跨境直邮 5 折限时开启，详情见 {其他链接}",
+    enabled: true,
   },
   {
     id: "tpl3",
     name: "到货提醒",
     content: "【信汇】{联系人}，您关注的 {我方产品} 已到货，前往 {官网链接} 查看库存。",
+    enabled: true,
   },
   {
     id: "tpl4",
     name: "物流延误说明",
     content: "【信汇】{联系人}，您的包裹因清关延误，最新进度请查询 {官网链接}。",
+    enabled: false,
   },
 ];
+
 
 const initialTasks: Task[] = [
   {
