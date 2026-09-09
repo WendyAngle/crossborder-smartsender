@@ -491,10 +491,13 @@ type State = {
 };
 
 type Store = State & {
-  addTarget: (t: Omit<Target, "id">) => boolean;
-  importTargets: (rows: Omit<Target, "id">[]) => ImportResult;
-  updateTarget: (id: string, t: Omit<Target, "id">) => boolean;
+  addTarget: (t: TargetInput) => boolean;
+  importTargets: (rows: TargetInput[]) => ImportResult;
+  updateTarget: (id: string, t: TargetInput) => boolean;
   removeTarget: (id: string) => void;
+  /** 批量启用 / 禁用目标 */
+  setTargetsEnabled: (ids: string[], enabled: boolean) => void;
+
   addTemplate: (t: Omit<Template, "id">) => void;
   updateTemplate: (id: string, t: Omit<Template, "id">) => void;
   removeTemplate: (id: string) => void;
