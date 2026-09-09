@@ -509,9 +509,12 @@ type Store = State & {
   /** 批量启用 / 禁用目标 */
   setTargetsEnabled: (ids: string[], enabled: boolean) => void;
 
-  addTemplate: (t: Omit<Template, "id">) => void;
-  updateTemplate: (id: string, t: Omit<Template, "id">) => void;
+  addTemplate: (t: TemplateInput) => void;
+  updateTemplate: (id: string, t: TemplateInput) => void;
   removeTemplate: (id: string) => void;
+  /** 批量启用 / 禁用模板 */
+  setTemplatesEnabled: (ids: string[], enabled: boolean) => void;
+
   createTask: (input: {
     name: string;
     targetIds: string[];
