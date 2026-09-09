@@ -467,7 +467,7 @@ function TasksPage() {
                   <td className="px-5 py-3 font-medium">{task.name}</td>
                   <td className="px-3 py-3 tabular-nums">
                     <Link
-                      to="/tasks/$taskId"
+                      to="/tasks2/$taskId"
                       params={{ taskId: task.id }}
                       className="font-medium text-primary hover:underline"
                     >
@@ -511,7 +511,7 @@ function TasksPage() {
                   </td>
                   <td className="whitespace-nowrap px-5 py-3">
                     <Link
-                      to="/tasks/$taskId"
+                      to="/tasks2/$taskId"
                       params={{ taskId: task.id }}
                       className="text-xs font-medium text-primary hover:underline"
                     >

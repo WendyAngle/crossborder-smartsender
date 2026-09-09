@@ -1,9 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState, type ReactNode } from "react";
-import { translateForRegion } from "@/lib/translate.functions";
-import { AppShell, Drawer, StatCard } from "@/components/app-shell";
+import { AppShell, StatCard } from "@/components/app-shell";
 import { Pagination, usePagination } from "@/components/pagination";
+import { ReplyDrawer } from "@/components/reply-drawer";
 import { MsgTypePill, SmsPoster } from "@/components/sms-image";
 import {
   formatTime,
@@ -12,6 +11,7 @@ import {
   type SmsRecord,
   type SmsStatus,
 } from "@/lib/sms-store";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -107,56 +107,14 @@ function HoverBubble({
   );
 }
 
-const REGION_LANGUAGE: Record<string, string> = {
-  美国: "英语",
-  英国: "英语",
-  德国: "德语",
-  日本: "日语",
-  韩国: "韩语",
-  西班牙: "西班牙语",
-  阿联酋: "阿拉伯语",
-  中国: "中文",
-  法国: "法语",
-  意大利: "意大利语",
-  印度: "印地语",
-  澳大利亚: "英语",
-  马来西亚: "马来语",
-  越南: "越南语",
-  新加坡: "英语",
-  俄罗斯: "俄语",
-  巴西: "葡萄牙语",
-};
-
-function regionLanguage(region: string) {
-  return REGION_LANGUAGE[region] ?? `${region}语言`;
-}
-
 function DetailsPage() {
-  const { records, targetById, sendReply, threadRecords, markReplyRead } = useSmsStore();
+  const { records, targetById, markReplyRead } = useSmsStore();
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | SmsStatus>("all");
   const [replyFilter, setReplyFilter] = useState<"all" | "yes" | "no">("all");
   const [typeFilter, setTypeFilter] = useState<"all" | MsgType>("all");
   const [replyTo, setReplyTo] = useState<SmsRecord | null>(null);
-  const [replyText, setReplyText] = useState("");
-  const [translating, setTranslating] = useState(false);
-  const [translateError, setTranslateError] = useState("");
-  const [originalText, setOriginalText] = useState("");
-  const translate = useServerFn(translateForRegion);
 
-  async function doTranslate(text: string, region: string) {
-    setTranslating(true);
-    setTranslateError("");
-    try {
-      const res = await translate({ data: { text: text.trim(), region } });
-      setOriginalText(text.trim());
-      setReplyText(res.translated);
-    } catch (e) {
-      setTranslateError(e instanceof Error ? e.message : "翻译失败，请稍后重试");
-    } finally {
-      setTranslating(false);
-    }
-  }
 
   type Row = {
     key: string;
@@ -219,135 +177,14 @@ function DetailsPage() {
   const replies = records.filter((r) => r.reply).length;
   const credits = records.reduce((s, r) => s + (r.status === "failed" ? 0 : r.credits), 0);
 
-  const thread = replyTo ? threadRecords(replyTo.threadId) : [];
-
   return (
     <AppShell
       title="短信明细"
       subtitle="跨境营销发送记录"
       drawer={
-        replyTo ? (
-          <Drawer
-            title="会话与回复"
-            hint={`${targetById(replyTo.targetId)?.name ?? ""} · ${targetById(replyTo.targetId)?.region ?? ""}`}
-            width="w-[560px]"
-            onClose={() => setReplyTo(null)}
-            footer={
-              <>
-                <button className="btn-ghost px-4 py-2.5 text-sm" onClick={() => setReplyTo(null)}>
-                  取消
-                </button>
-                <button
-                  className="btn-primary flex-1 px-4 py-2.5 text-sm"
-                  onClick={() => {
-                    if (!replyText.trim()) return;
-                    sendReply(replyTo.id, replyText.trim());
-                    setReplyText("");
-                    setReplyTo(null);
-                  }}
-                >
-                  发送回复（新增一条短信）
-                </button>
-              </>
-            }
-          >
-            <div>
-              <div className="text-xs font-medium text-muted-foreground">
-                会话记录 · 共 {thread.length} 条外发
-              </div>
-              <div className="mt-2 space-y-2.5">
-                {thread.map((r) => (
-                  <div key={r.id} className="space-y-2.5">
-                    <div className="rounded-xl bg-background p-3">
-                      <div className="flex items-center gap-2 text-[10px] uppercase tracking-wide text-muted-foreground">
-                        我方 · 第 {r.seq} 条 · {r.kind === "campaign" ? "任务群发" : "人工回复"} ·{" "}
-                        {(r.msgType ?? "text") === "image" ? "图片" : "文本"}
-                        <span className="ml-auto tabular-nums">{formatTime(r.createdAt)}</span>
-                      </div>
-                      {(r.msgType ?? "text") === "image" ? (
-                        <div className="mt-1.5 max-w-[80%]">
-                          <SmsPoster content={r.content} size="sm" />
-                        </div>
-                      ) : (
-                        <div className="mt-1.5 text-[13px] leading-relaxed">{r.content}</div>
-                      )}
-                      {r.contentZh && (
-                        <div className="mt-1.5 border-t border-border pt-1.5 text-xs text-muted-foreground">
-                          译文：{r.contentZh}
-                        </div>
-                      )}
-                    </div>
-                    {r.reply && (
-                      <div className="ml-6 rounded-xl bg-accent p-3">
-                        <div className="flex items-center gap-2 text-[10px] uppercase tracking-wide text-accent-foreground/70">
-                          对方回复
-                          <span className="ml-auto tabular-nums">{formatTime(r.replyAt)}</span>
-                        </div>
-                        <div className="mt-1.5 text-[13px] leading-relaxed text-accent-foreground">
-                          {r.reply}
-                        </div>
-                        {r.replyZh && (
-                          <div className="mt-1.5 border-t border-accent-foreground/15 pt-1.5 text-xs text-accent-foreground/70">
-                            译文：{r.replyZh}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <label className="text-xs font-medium text-muted-foreground">回复内容</label>
-                <button
-                  className="btn-ghost ml-auto px-3 py-1.5 text-xs"
-                  disabled={translating || !replyText.trim()}
-                  onClick={() => {
-                    const region = targetById(replyTo.targetId)?.region ?? "";
-                    void doTranslate(replyText, region);
-                  }}
-                >
-                  {translating
-                    ? "翻译中…"
-                    : `翻译为${regionLanguage(targetById(replyTo.targetId)?.region ?? "")}`}
-                </button>
-              </div>
-              <textarea
-                className="field mt-1.5 min-h-28 resize-y"
-                value={replyText}
-                onChange={(e) => setReplyText(e.target.value)}
-                placeholder="输入回复内容…"
-              />
-              {translateError && (
-                <p className="mt-1.5 rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive">
-                  {translateError}
-                </p>
-              )}
-              {originalText && (
-                <div className="mt-1.5 rounded-lg border border-border bg-background/60 p-2.5 text-[11px] text-muted-foreground">
-                  <div className="flex items-center gap-2">
-                    <span>翻译前内容</span>
-                    <button
-                      className="ml-auto underline hover:text-foreground"
-                      onClick={() => {
-                        setReplyText(originalText);
-                        setOriginalText("");
-                      }}
-                    >
-                      撤销翻译
-                    </button>
-                  </div>
-                  <div className="mt-1 whitespace-pre-wrap">{originalText}</div>
-                </div>
-              )}
-              <p className="mt-1.5 text-[11px] text-muted-foreground">
-                回复将作为同一会话的第 {thread.length + 1} 条短信独立记账，原记录保持不变。
-              </p>
-            </div>
-          </Drawer>
-        ) : null
+        replyTo ? <ReplyDrawer record={replyTo} onClose={() => setReplyTo(null)} /> : null
       }
+
     >
       <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard label="今日发送" value={records.length.toLocaleString()} />
@@ -431,8 +268,8 @@ function DetailsPage() {
                     onClick={() => {
                       markReplyRead(r.id);
                       setReplyTo(r);
-                      setReplyText("");
                     }}
+
                   >
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-1.5">
