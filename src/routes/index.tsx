@@ -132,7 +132,7 @@ function regionLanguage(region: string) {
 }
 
 function DetailsPage() {
-  const { records, targetById, sendReply, threadRecords } = useSmsStore();
+  const { records, targetById, sendReply, threadRecords, markReplyRead } = useSmsStore();
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | SmsStatus>("all");
   const [replyFilter, setReplyFilter] = useState<"all" | "yes" | "no">("all");
@@ -471,6 +471,7 @@ function DetailsPage() {
                         <button
                           className="btn-primary px-3 py-1.5 text-xs"
                           onClick={() => {
+                            markReplyRead(r.id);
                             setReplyTo(r);
                             setReplyText("");
                           }}
@@ -481,6 +482,7 @@ function DetailsPage() {
                         <button
                           className="btn-ghost px-3 py-1.5 text-xs"
                           onClick={() => {
+                            markReplyRead(r.id);
                             setReplyTo(r);
                             setReplyText("");
                           }}
