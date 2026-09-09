@@ -61,6 +61,21 @@ function TemplatesPage() {
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   }
 
+  function selectAll() {
+    setSelectedIds((prev) => [...new Set([...prev, ...visibleIds])]);
+  }
+
+  function invertSelection() {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      for (const id of visibleIds) {
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+      }
+      return [...next];
+    });
+  }
+
 
   function openDrawer(tpl: Template | null) {
     setName(tpl?.name ?? "");
