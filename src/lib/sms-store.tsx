@@ -525,7 +525,7 @@ type Store = State & {
 export type ImportResult = { added: number; invalid: number; duplicated: number };
 
 const StoreContext = createContext<Store | null>(null);
-const KEY = "sms-console-state-v8";
+const KEY = "sms-console-state-v9";
 
 export const REACH_LABEL: Record<ReachStatus, string> = {
   untouched: "未触达",
@@ -818,6 +818,7 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
       importTargets,
       updateTarget,
       removeTarget,
+      setTargetsEnabled,
       addTemplate,
       updateTemplate,
       removeTemplate,
@@ -841,6 +842,7 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
       importTargets,
       updateTarget,
       removeTarget,
+      setTargetsEnabled,
       addTemplate,
       updateTemplate,
       removeTemplate,
