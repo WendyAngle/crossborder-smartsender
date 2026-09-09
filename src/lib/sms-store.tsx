@@ -13,13 +13,25 @@ export type Target = {
   name: string;
   phone: string;
   region: string;
+  /** 启用状态：禁用后不可被新任务选中，导入/新增默认启用 */
+  enabled: boolean;
 };
+
+/** 新增/导入/编辑目标时的输入（启用状态由系统维护） */
+export type TargetInput = Omit<Target, "id" | "enabled">;
+
 
 export type Template = {
   id: string;
   name: string;
   content: string;
+  /** 启用状态：禁用后不可在新建任务中选用，新建模板默认启用 */
+  enabled: boolean;
 };
+
+/** 新建/编辑模板时的输入（启用状态由系统维护） */
+export type TemplateInput = Omit<Template, "id" | "enabled">;
+
 
 /** 发信内容类型：text = 纯文本短信；image = 由模板内容自动生成的图片短信（MMS） */
 export type MsgType = "text" | "image";
@@ -192,48 +204,66 @@ export function formatTime(value: string | null) {
 }
 
 const initialTargets: Target[] = [
-  { id: "t1", name: "Sophia Miller", phone: "+1 305 555 0182", region: "美国" },
-  { id: "t2", name: "Carlos Mendez", phone: "+34 600 555 019", region: "西班牙" },
-  { id: "t3", name: "Emma Wilson", phone: "+44 7700 555 014", region: "英国" },
-  { id: "t4", name: "Ahmed Hassan", phone: "+971 50 555 0121", region: "阿联酋" },
-  { id: "t5", name: "李静", phone: "+86 138 0000 0777", region: "中国" },
-  { id: "t6", name: "Hans Müller", phone: "+49 170 555 0234", region: "德国" },
-  { id: "t7", name: "Marie Dubois", phone: "+33 6 55 50 12 34", region: "法国" },
-  { id: "t8", name: "Luca Rossi", phone: "+39 333 555 0456", region: "意大利" },
-  { id: "t9", name: "Yuki Tanaka", phone: "+81 90 5550 0789", region: "日本" },
-  { id: "t10", name: "Kim Min-jun", phone: "+82 10 5550 0567", region: "韩国" },
-  { id: "t11", name: "Raj Patel", phone: "+91 98765 43210", region: "印度" },
-  { id: "t12", name: "Olivia Smith", phone: "+61 412 555 098", region: "澳大利亚" },
-  { id: "t13", name: "Siti Binti Abdullah", phone: "+60 12 555 0678", region: "马来西亚" },
-  { id: "t14", name: "Nguyen Van An", phone: "+84 98 555 0321", region: "越南" },
-  { id: "t15", name: "王伟", phone: "+86 139 0000 0888", region: "中国" },
-  { id: "t16", name: "Chen Wei Ling", phone: "+65 9123 4567", region: "新加坡" },
-  { id: "t17", name: "Anastasia Ivanova", phone: "+7 915 555 0456", region: "俄罗斯" },
-  { id: "t18", name: "Pedro Almeida", phone: "+55 11 95550 1234", region: "巴西" },
+  { id: "t1", name: "Sophia Miller", phone: "+1 305 555 0182", region: "美国", enabled: true },
+  { id: "t2", name: "Carlos Mendez", phone: "+34 600 555 019", region: "西班牙", enabled: true },
+  { id: "t3", name: "Emma Wilson", phone: "+44 7700 555 014", region: "英国", enabled: true },
+  { id: "t4", name: "Ahmed Hassan", phone: "+971 50 555 0121", region: "阿联酋", enabled: true },
+  { id: "t5", name: "李静", phone: "+86 138 0000 0777", region: "中国", enabled: true },
+  { id: "t6", name: "Hans Müller", phone: "+49 170 555 0234", region: "德国", enabled: true },
+  { id: "t7", name: "Marie Dubois", phone: "+33 6 55 50 12 34", region: "法国", enabled: true },
+  { id: "t8", name: "Luca Rossi", phone: "+39 333 555 0456", region: "意大利", enabled: false },
+  { id: "t9", name: "Yuki Tanaka", phone: "+81 90 5550 0789", region: "日本", enabled: true },
+  { id: "t10", name: "Kim Min-jun", phone: "+82 10 5550 0567", region: "韩国", enabled: true },
+  { id: "t11", name: "Raj Patel", phone: "+91 98765 43210", region: "印度", enabled: true },
+  { id: "t12", name: "Olivia Smith", phone: "+61 412 555 098", region: "澳大利亚", enabled: true },
+  {
+    id: "t13",
+    name: "Siti Binti Abdullah",
+    phone: "+60 12 555 0678",
+    region: "马来西亚",
+    enabled: true,
+  },
+  { id: "t14", name: "Nguyen Van An", phone: "+84 98 555 0321", region: "越南", enabled: false },
+  { id: "t15", name: "王伟", phone: "+86 139 0000 0888", region: "中国", enabled: true },
+  { id: "t16", name: "Chen Wei Ling", phone: "+65 9123 4567", region: "新加坡", enabled: true },
+  {
+    id: "t17",
+    name: "Anastasia Ivanova",
+    phone: "+7 915 555 0456",
+    region: "俄罗斯",
+    enabled: true,
+  },
+  { id: "t18", name: "Pedro Almeida", phone: "+55 11 95550 1234", region: "巴西", enabled: true },
 ];
+
 
 const initialTemplates: Template[] = [
   {
     id: "tpl1",
     name: "新客首单立减",
     content: "【信汇】{联系人}，首单立减 30 元，{我方产品} 限时开启，点击 {官网链接} 抢购 →",
+    enabled: true,
   },
   {
     id: "tpl2",
     name: "限时折扣",
     content: "【信汇】{联系人}，跨境直邮 5 折限时开启，详情见 {其他链接}",
+    enabled: true,
   },
   {
     id: "tpl3",
     name: "到货提醒",
     content: "【信汇】{联系人}，您关注的 {我方产品} 已到货，前往 {官网链接} 查看库存。",
+    enabled: true,
   },
   {
     id: "tpl4",
     name: "物流延误说明",
     content: "【信汇】{联系人}，您的包裹因清关延误，最新进度请查询 {官网链接}。",
+    enabled: false,
   },
 ];
+
 
 const initialTasks: Task[] = [
   {
@@ -472,13 +502,19 @@ type State = {
 };
 
 type Store = State & {
-  addTarget: (t: Omit<Target, "id">) => boolean;
-  importTargets: (rows: Omit<Target, "id">[]) => ImportResult;
-  updateTarget: (id: string, t: Omit<Target, "id">) => boolean;
+  addTarget: (t: TargetInput) => boolean;
+  importTargets: (rows: TargetInput[]) => ImportResult;
+  updateTarget: (id: string, t: TargetInput) => boolean;
   removeTarget: (id: string) => void;
-  addTemplate: (t: Omit<Template, "id">) => void;
-  updateTemplate: (id: string, t: Omit<Template, "id">) => void;
+  /** 批量启用 / 禁用目标 */
+  setTargetsEnabled: (ids: string[], enabled: boolean) => void;
+
+  addTemplate: (t: TemplateInput) => void;
+  updateTemplate: (id: string, t: TemplateInput) => void;
   removeTemplate: (id: string) => void;
+  /** 批量启用 / 禁用模板 */
+  setTemplatesEnabled: (ids: string[], enabled: boolean) => void;
+
   createTask: (input: {
     name: string;
     targetIds: string[];
@@ -503,7 +539,7 @@ type Store = State & {
 export type ImportResult = { added: number; invalid: number; duplicated: number };
 
 const StoreContext = createContext<Store | null>(null);
-const KEY = "sms-console-state-v8";
+const KEY = "sms-console-state-v9";
 
 export const REACH_LABEL: Record<ReachStatus, string> = {
   untouched: "未触达",
@@ -615,16 +651,16 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
     }
   }, [state]);
 
-  const addTarget = useCallback((t: Omit<Target, "id">) => {
+  const addTarget = useCallback((t: TargetInput) => {
     if (!isValidTargetRow(t)) return false;
     setState((s) => ({
       ...s,
-      targets: [{ id: uid(), ...t, phone: t.phone.trim() }, ...s.targets],
+      targets: [{ id: uid(), ...t, phone: t.phone.trim(), enabled: true }, ...s.targets],
     }));
     return true;
   }, []);
 
-  const importTargets = useCallback((rows: Omit<Target, "id">[]) => {
+  const importTargets = useCallback((rows: TargetInput[]) => {
     const result: ImportResult = { added: 0, invalid: 0, duplicated: 0 };
     setState((s) => {
       const seen = new Set(s.targets.map((t) => digitsOf(t.phone)));
@@ -640,7 +676,7 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
           continue;
         }
         seen.add(key);
-        accepted.push({ id: uid(), ...r, phone: r.phone.trim() });
+        accepted.push({ id: uid(), ...r, phone: r.phone.trim(), enabled: true });
       }
       result.added = accepted.length;
       if (accepted.length === 0) return s;
@@ -649,11 +685,13 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
     return result;
   }, []);
 
-  const updateTarget = useCallback((id: string, t: Omit<Target, "id">) => {
+  const updateTarget = useCallback((id: string, t: TargetInput) => {
     if (!isValidTargetRow(t)) return false;
     setState((s) => ({
       ...s,
-      targets: s.targets.map((x) => (x.id === id ? { id, ...t, phone: t.phone.trim() } : x)),
+      targets: s.targets.map((x) =>
+        x.id === id ? { ...x, ...t, id, phone: t.phone.trim() } : x,
+      ),
     }));
     return true;
   }, []);
@@ -662,20 +700,38 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
     setState((s) => ({ ...s, targets: s.targets.filter((x) => x.id !== id) }));
   }, []);
 
-  const addTemplate = useCallback((t: Omit<Template, "id">) => {
-    setState((s) => ({ ...s, templates: [{ id: uid(), ...t }, ...s.templates] }));
-  }, []);
-
-  const updateTemplate = useCallback((id: string, t: Omit<Template, "id">) => {
+  const setTargetsEnabled = useCallback((ids: string[], enabled: boolean) => {
+    const set = new Set(ids);
     setState((s) => ({
       ...s,
-      templates: s.templates.map((x) => (x.id === id ? { id, ...t } : x)),
+      targets: s.targets.map((x) => (set.has(x.id) ? { ...x, enabled } : x)),
+    }));
+  }, []);
+
+
+  const addTemplate = useCallback((t: TemplateInput) => {
+    setState((s) => ({ ...s, templates: [{ id: uid(), ...t, enabled: true }, ...s.templates] }));
+  }, []);
+
+  const updateTemplate = useCallback((id: string, t: TemplateInput) => {
+    setState((s) => ({
+      ...s,
+      templates: s.templates.map((x) => (x.id === id ? { ...x, ...t, id } : x)),
     }));
   }, []);
 
   const removeTemplate = useCallback((id: string) => {
     setState((s) => ({ ...s, templates: s.templates.filter((x) => x.id !== id) }));
   }, []);
+
+  const setTemplatesEnabled = useCallback((ids: string[], enabled: boolean) => {
+    const set = new Set(ids);
+    setState((s) => ({
+      ...s,
+      templates: s.templates.map((x) => (set.has(x.id) ? { ...x, enabled } : x)),
+    }));
+  }, []);
+
 
   const createTask = useCallback(
     ({
@@ -785,9 +841,11 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
       importTargets,
       updateTarget,
       removeTarget,
+      setTargetsEnabled,
       addTemplate,
       updateTemplate,
       removeTemplate,
+      setTemplatesEnabled,
       createTask,
       sendReply,
       markReplyRead,
@@ -808,9 +866,11 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
       importTargets,
       updateTarget,
       removeTarget,
+      setTargetsEnabled,
       addTemplate,
       updateTemplate,
       removeTemplate,
+      setTemplatesEnabled,
       createTask,
       sendReply,
       markReplyRead,

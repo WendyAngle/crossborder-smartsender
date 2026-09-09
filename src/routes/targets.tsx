@@ -2,8 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { AppShell, Drawer, StatCard } from "@/components/app-shell";
 import { Pagination, usePagination } from "@/components/pagination";
-import { ReachCell } from "@/components/reach";
-import { isValidPhone, useSmsStore, type ReachStatus, type Target } from "@/lib/sms-store";
+import { isValidPhone, useSmsStore, type Target } from "@/lib/sms-store";
+
 
 export const Route = createFileRoute("/targets")({
   head: () => ({
@@ -27,10 +27,12 @@ export const Route = createFileRoute("/targets")({
 type Mode = { kind: "none" } | { kind: "single"; target?: Target | undefined } | { kind: "import" };
 
 function TargetsPage() {
-  const { targets, addTarget, updateTarget, removeTarget, importTargets, reachOf } = useSmsStore();
+  const { targets, addTarget, updateTarget, removeTarget, importTargets, setTargetsEnabled } =
+    useSmsStore();
   const [mode, setMode] = useState<Mode>({ kind: "none" });
   const [query, setQuery] = useState("");
-  const [reachFilter, setReachFilter] = useState<"all" | ReachStatus | "no-reply">("all");
+  const [enabledFilter, setEnabledFilter] = useState<"all" | "enabled" | "disabled">("all");
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -40,25 +42,33 @@ function TargetsPage() {
   const [formError, setFormError] = useState("");
   const [importInfo, setImportInfo] = useState("");
 
-  const rows = useMemo(
-    () => targets.map((t) => ({ target: t, reach: reachOf(t.id) })),
-    [targets, reachOf],
-  );
-
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return rows.filter(({ target: t, reach }) => {
-      if (reachFilter === "no-reply") {
-        if (reach.status === "untouched" || reach.replied) return false;
-      } else if (reachFilter !== "all" && reach.status !== reachFilter) {
-        return false;
-      }
+    return targets.filter((t) => {
+      if (enabledFilter === "enabled" && !t.enabled) return false;
+      if (enabledFilter === "disabled" && t.enabled) return false;
       if (!q) return true;
       return [t.name, t.phone, t.region].some((v) => v.toLowerCase().includes(q));
     });
-  }, [rows, query, reachFilter]);
+  }, [targets, query, enabledFilter]);
 
   const { pageItems, props: pageProps } = usePagination(filtered);
+
+  // 选中项始终限定在当前筛选结果内，避免筛选后误操作看不见的数据
+  const visibleIds = filtered.map((t) => t.id);
+  const selected = selectedIds.filter((id) => visibleIds.includes(id));
+  const pageAllSelected = pageItems.length > 0 && pageItems.every((t) => selected.includes(t.id));
+
+  function toggleOne(id: string) {
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  }
+
+  function togglePage(checked: boolean) {
+    const ids = pageItems.map((t) => t.id);
+    setSelectedIds((prev) =>
+      checked ? [...new Set([...prev, ...ids])] : prev.filter((x) => !ids.includes(x)),
+    );
+  }
 
   const bulkStats = useMemo(() => {
     let valid = 0;
@@ -73,8 +83,9 @@ function TargetsPage() {
   }, [bulk]);
 
   const regions = new Set(targets.map((t) => t.region)).size;
-  const untouched = rows.filter((r) => r.reach.status === "untouched").length;
-  const deliveredCount = rows.filter((r) => r.reach.status === "delivered").length;
+  const enabledCount = targets.filter((t) => t.enabled).length;
+  const disabledCount = targets.length - enabledCount;
+
 
   function openSingle(target?: Target) {
     setName(target?.name ?? "");
@@ -282,8 +293,9 @@ function TargetsPage() {
       <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard label="目标总数" value={targets.length.toLocaleString()} />
         <StatCard label="覆盖地区" value={String(regions)} tone="primary" />
-        <StatCard label="未触达" value={String(untouched)} />
-        <StatCard label="已送达" value={String(deliveredCount)} />
+        <StatCard label="启用中" value={String(enabledCount)} />
+        <StatCard label="已禁用" value={String(disabledCount)} />
+
       </div>
 
       <section className="panel overflow-hidden">
@@ -304,20 +316,17 @@ function TargetsPage() {
             />
             <select
               className="field w-28 py-1.5 text-xs"
-              value={reachFilter}
+              value={enabledFilter}
               onChange={(e) => {
-                setReachFilter(e.target.value as "all" | ReachStatus | "no-reply");
+                setEnabledFilter(e.target.value as "all" | "enabled" | "disabled");
                 pageProps.onPage(1);
               }}
             >
               <option value="all">全部状态</option>
-              <option value="untouched">未触达</option>
-              <option value="sending">发送中</option>
-              <option value="sent">已发送</option>
-              <option value="delivered">已送达</option>
-              <option value="failed">送达失败</option>
-              <option value="no-reply">已触达未回复</option>
+              <option value="enabled">启用</option>
+              <option value="disabled">禁用</option>
             </select>
+
             <button
               className="btn-ghost px-3 py-1.5 text-xs"
               onClick={() => setMode({ kind: "import" })}
@@ -330,33 +339,93 @@ function TargetsPage() {
           </div>
         </div>
 
+        {selected.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 border-b border-border bg-primary/5 px-5 py-2.5 text-xs">
+            <span className="text-muted-foreground">
+              已选择 <span className="font-semibold text-foreground">{selected.length}</span> 条
+            </span>
+            <button
+              className="btn-ghost px-3 py-1.5 text-xs"
+              onClick={() => {
+                setTargetsEnabled(selected, true);
+                setSelectedIds([]);
+              }}
+            >
+              批量启用
+            </button>
+            <button
+              className="btn-ghost px-3 py-1.5 text-xs"
+              onClick={() => {
+                setTargetsEnabled(selected, false);
+                setSelectedIds([]);
+              }}
+            >
+              批量禁用
+            </button>
+            <button
+              className="btn-ghost px-3 py-1.5 text-xs text-muted-foreground"
+              onClick={() => setSelectedIds([])}
+            >
+              取消选择
+            </button>
+          </div>
+        )}
+
         <table className="w-full border-collapse text-left text-sm">
           <thead>
             <tr className="border-b border-border text-[11px] uppercase tracking-wide text-muted-foreground">
-              <th className="px-5 py-3 font-medium">姓名</th>
+              <th className="w-10 px-5 py-3">
+                <input
+                  type="checkbox"
+                  className="size-3.5 accent-[hsl(var(--primary))]"
+                  aria-label="全选当前页"
+                  checked={pageAllSelected}
+                  onChange={(e) => togglePage(e.target.checked)}
+                />
+              </th>
+              <th className="px-3 py-3 font-medium">姓名</th>
               <th className="px-3 py-3 font-medium">手机号</th>
               <th className="px-3 py-3 font-medium">国家 / 地区</th>
-              <th className="px-3 py-3 font-medium">触达状态</th>
+              <th className="px-3 py-3 font-medium">启用状态</th>
               <th className="px-5 py-3 text-right font-medium">操作</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {pageItems.map(({ target: t, reach }) => (
+            {pageItems.map((t) => (
               <tr key={t.id} className="transition-colors hover:bg-background/70">
-                <td className="px-5 py-3 font-medium">{t.name}</td>
+                <td className="px-5 py-3">
+                  <input
+                    type="checkbox"
+                    className="size-3.5 accent-[hsl(var(--primary))]"
+                    aria-label={`选择 ${t.name}`}
+                    checked={selected.includes(t.id)}
+                    onChange={() => toggleOne(t.id)}
+                  />
+                </td>
+                <td className="px-3 py-3 font-medium">{t.name}</td>
                 <td className="px-3 py-3 tabular-nums text-muted-foreground">{t.phone}</td>
                 <td className="px-3 py-3 text-muted-foreground">{t.region}</td>
                 <td className="px-3 py-3">
-                  <ReachCell
-                    status={reach.status}
-                    lastAt={reach.lastAt}
-                    failReason={reach.failReason}
-                    count={reach.count}
-                    replied={reach.replied}
-                  />
+                  {t.enabled ? (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary">
+                      <span className="size-1.5 rounded-full bg-primary" />
+                      启用
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
+                      <span className="size-1.5 rounded-full bg-muted-foreground/60" />
+                      禁用
+                    </span>
+                  )}
                 </td>
                 <td className="px-5 py-3 text-right">
                   <div className="inline-flex gap-2">
+                    <button
+                      className="btn-ghost px-3 py-1.5 text-xs"
+                      onClick={() => setTargetsEnabled([t.id], !t.enabled)}
+                    >
+                      {t.enabled ? "禁用" : "启用"}
+                    </button>
                     <button className="btn-ghost px-3 py-1.5 text-xs" onClick={() => openSingle(t)}>
                       编辑
                     </button>
@@ -372,13 +441,14 @@ function TargetsPage() {
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-5 py-12 text-center text-sm text-muted-foreground">
+                <td colSpan={6} className="px-5 py-12 text-center text-sm text-muted-foreground">
                   暂无匹配的目标，可调整筛选或新增/批量导入名单
                 </td>
               </tr>
             )}
           </tbody>
         </table>
+
 
         <Pagination {...pageProps} />
       </section>
