@@ -64,7 +64,7 @@ function relativeTime(iso: string) {
 }
 
 function LeadsPage() {
-  const { records, targetById, taskById, markReplyRead, sendReply } = useSmsStore();
+  const { records, tasks, targetById, markReplyRead, sendReply } = useSmsStore();
   const [query, setQuery] = useState("");
   const [stage, setStage] = useState<"all" | LeadStage>("all");
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -219,7 +219,7 @@ function LeadsPage() {
             key={active.threadId}
             lead={active}
             onSend={(text) => sendReply(active.records[active.records.length - 1]!.id, text)}
-            taskName={taskById?.(active.records[0]!.taskId ?? "")?.name ?? null}
+            taskName={tasks.find((t) => t.id === active.records[0]!.taskId)?.name ?? null}
           />
         ) : (
           <div className="grid flex-1 place-items-center text-sm text-muted-foreground">
