@@ -10,12 +10,12 @@ import { translateForRegion } from "@/lib/translate.functions";
 export const Route = createFileRoute("/leads")({
   head: () => ({
     meta: [
-      { title: "商机管理 · 短信营销管理系统" },
+      { title: "会话跟进 · 短信营销管理系统" },
       {
         name: "description",
         content: "以会话列表方式集中跟进有回复的目标商机：未读提醒、聊天式上下文与一键翻译回复。",
       },
-      { property: "og:title", content: "商机管理 · 短信营销管理系统" },
+      { property: "og:title", content: "会话跟进 · 短信营销管理系统" },
       {
         property: "og:description",
         content: "以会话列表方式集中跟进有回复的目标商机：未读提醒、聊天式上下文与一键翻译回复。",
@@ -132,7 +132,7 @@ function LeadsPage() {
 
   return (
     <AppShell
-      title="商机管理"
+      title="会话跟进"
       subtitle={`${leads.length} 个有回复的会话 · ${pendingCount} 个待跟进 · ${totalUnread} 条未读`}
     >
       <div className="flex h-[calc(100vh-8.5rem)] min-h-[560px] overflow-hidden rounded-2xl border border-border bg-card">
