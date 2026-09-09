@@ -147,7 +147,7 @@ function Task2TargetsPage() {
         <section className="panel mb-5 px-5 py-4">
           <h2 className="font-display text-[15px] font-semibold">发信内容</h2>
           <p className="mt-2 whitespace-pre-wrap rounded-xl bg-background p-3 text-[13px] leading-relaxed text-foreground/80">
-            {renderTemplate(template.content, "客户")}
+            {renderTemplate(template.content, "客户", task.varValues)}
           </p>
         </section>
       )}
