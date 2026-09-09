@@ -199,6 +199,8 @@ function TasksPage() {
   const [templateId, setTemplateId] = useState(enabledTemplates[0]?.id ?? "");
   const [msgType, setMsgType] = useState<MsgType>("text");
   const [followUp, setFollowUp] = useState(true);
+  const [varValues, setVarValues] = useState<Record<string, string>>({});
+  const [varError, setVarError] = useState(false);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | TaskStatus>("all");
   const [typeFilter, setTypeFilter] = useState<"all" | MsgType>("all");
@@ -213,24 +215,49 @@ function TasksPage() {
 
   const template = templateById(templateId);
   const previewTarget = targets.find((t) => t.id === selected[0]);
+  const usedVars = template ? templateVariables(template.content) : [];
+  const needVars = template ? manualVariables(template.content) : [];
+  const missingVars = needVars.filter((v) => !(varValues[v.token] ?? "").trim());
   const preview = template
-    ? renderTemplate(template.content, previewTarget?.name ?? "客户")
+    ? renderTemplate(template.content, previewTarget?.name ?? "客户", varValues)
     : "请选择模板";
+
+  /** 切换模板时用模板默认值初始化变量输入 */
+  function pickTemplate(id: string) {
+    setTemplateId(id);
+    setVarError(false);
+    const tpl = templateById(id);
+    const next: Record<string, string> = {};
+    if (tpl) for (const v of manualVariables(tpl.content)) next[v.token] = defaultVarValue(v.token);
+    setVarValues(next);
+  }
 
   function openDrawer() {
     setTaskName(autoTaskName());
     setSelected([]);
-    setTemplateId(enabledTemplates[0]?.id ?? "");
     setMsgType("text");
     setFollowUp(true);
+    pickTemplate(enabledTemplates[0]?.id ?? "");
     setOpen(true);
   }
 
   function submit() {
     if (!taskName.trim() || selected.length === 0 || !templateId) return;
-    createTask({ name: taskName.trim(), targetIds: selected, templateId, msgType, followUp });
+    if (missingVars.length > 0) {
+      setVarError(true);
+      return;
+    }
+    createTask({
+      name: taskName.trim(),
+      targetIds: selected,
+      templateId,
+      msgType,
+      followUp,
+      varValues: needVars.length > 0 ? varValues : undefined,
+    });
     setOpen(false);
   }
+
 
   const rows = useMemo(
     () =>
