@@ -142,17 +142,17 @@ function LeadsPage() {
               placeholder="搜索目标 / 手机号 / 地区 / 回复内容"
             />
             <div className="flex gap-1.5">
-              {(["all", "pending", "following", "watching"] as const).map((s) => (
+              {(["all", "unread", "read"] as const).map((s) => (
                 <button
                   key={s}
-                  onClick={() => setStage(s)}
+                  onClick={() => setStatus(s)}
                   className={`rounded-lg px-2.5 py-1.5 text-xs transition ${
-                    stage === s
+                    status === s
                       ? "bg-primary text-primary-foreground"
                       : "bg-background text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  {s === "all" ? "全部" : STAGE_LABEL[s]}
+                  {s === "all" ? "全部" : STATUS_LABEL[s]}
                 </button>
               ))}
             </div>
