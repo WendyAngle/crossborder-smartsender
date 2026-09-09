@@ -62,20 +62,18 @@ function TargetsPage() {
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   }
 
-  function selectAll() {
-    setSelectedIds((prev) => [...new Set([...prev, ...visibleIds])]);
-  }
+  const pageAllSelected = pageItems.length > 0 && pageItems.every((t) => selected.includes(t.id));
 
-  function invertSelection() {
+  function togglePageAll() {
     setSelectedIds((prev) => {
-      const next = new Set(prev);
-      for (const id of visibleIds) {
-        if (next.has(id)) next.delete(id);
-        else next.add(id);
+      const pageIds = pageItems.map((t) => t.id);
+      if (pageItems.every((t) => prev.includes(t.id))) {
+        return prev.filter((id) => !pageIds.includes(id));
       }
-      return [...next];
+      return [...new Set([...prev, ...pageIds])];
     });
   }
+
 
   const bulkStats = useMemo(() => {
     let valid = 0;
