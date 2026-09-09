@@ -25,7 +25,13 @@ export type Template = {
   id: string;
   name: string;
   content: string;
+  /** 启用状态：禁用后不可在新建任务中选用，新建模板默认启用 */
+  enabled: boolean;
 };
+
+/** 新建/编辑模板时的输入（启用状态由系统维护） */
+export type TemplateInput = Omit<Template, "id" | "enabled">;
+
 
 /** 发信内容类型：text = 纯文本短信；image = 由模板内容自动生成的图片短信（MMS） */
 export type MsgType = "text" | "image";
