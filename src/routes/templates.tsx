@@ -255,14 +255,14 @@ function TemplatesPage() {
           <div className="min-w-[720px]">
             {/* 表头 */}
             <div className="grid grid-cols-[44px_1.2fr_2fr_0.9fr_140px] items-center border-b border-border bg-background/60 px-5 py-2.5 text-xs font-medium text-muted-foreground">
-              <div className="flex flex-col gap-0.5">
-                <button className="text-left text-[10px] leading-tight hover:text-foreground" onClick={selectAll}>
-                  全选
-                </button>
-                <button className="text-left text-[10px] leading-tight hover:text-foreground" onClick={invertSelection}>
-                  反全选
-                </button>
-              </div>
+              <input
+                type="checkbox"
+                className="size-3.5 accent-[hsl(var(--primary))]"
+                aria-label="全选当前页"
+                checked={pageAllSelected}
+                onChange={togglePageAll}
+              />
+
               <span>模板名称</span>
               <span>模板内容</span>
               <span>变量</span>
