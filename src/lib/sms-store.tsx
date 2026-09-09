@@ -550,7 +550,10 @@ type Store = State & {
     templateId: string;
     msgType: MsgType;
     followUp: boolean;
+    /** 模板变量取值（{联系人} 自动按目标姓名填充） */
+    varValues?: Record<string, string>;
   }) => void;
+
   sendReply: (recordId: string, text: string) => void;
   /** 将会话中对方回复标记为已读 */
   markReplyRead: (recordId: string) => void;
