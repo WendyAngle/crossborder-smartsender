@@ -51,7 +51,7 @@ export type Task = {
   /** 是否跟进回复：开启后可对客户回复做人工跟进，单条积分按 1.5 倍计费 */
   followUp: boolean;
   /** 本次任务为模板变量填写的取值（{联系人} 按目标姓名自动填充，不在此存储） */
-  varValues?: Record<string, string>;
+  varValues?: Record<string, string> | undefined;
   createdAt: string;
 };
 
@@ -551,7 +551,7 @@ type Store = State & {
     msgType: MsgType;
     followUp: boolean;
     /** 模板变量取值（{联系人} 自动按目标姓名填充） */
-    varValues?: Record<string, string>;
+    varValues?: Record<string, string> | undefined;
   }) => void;
 
   sendReply: (recordId: string, text: string) => void;
@@ -779,7 +779,7 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
       templateId: string;
       msgType: MsgType;
       followUp: boolean;
-      varValues?: Record<string, string>;
+      varValues?: Record<string, string> | undefined;
     }) => {
       setState((s) => {
         const tpl = s.templates.find((t) => t.id === templateId);
