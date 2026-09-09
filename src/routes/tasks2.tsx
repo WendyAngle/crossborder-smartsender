@@ -191,7 +191,8 @@ function TasksPage() {
   const [open, setOpen] = useState(false);
   const [taskName, setTaskName] = useState(autoTaskName());
   const [selected, setSelected] = useState<string[]>([]);
-  const [templateId, setTemplateId] = useState(templates[0]?.id ?? "");
+  const enabledTemplates = templates.filter((t) => t.enabled);
+  const [templateId, setTemplateId] = useState(enabledTemplates[0]?.id ?? "");
   const [msgType, setMsgType] = useState<MsgType>("text");
   const [followUp, setFollowUp] = useState(true);
   const [query, setQuery] = useState("");
@@ -215,7 +216,7 @@ function TasksPage() {
   function openDrawer() {
     setTaskName(autoTaskName());
     setSelected([]);
-    setTemplateId(templates[0]?.id ?? "");
+    setTemplateId(enabledTemplates[0]?.id ?? "");
     setMsgType("text");
     setFollowUp(true);
     setOpen(true);
@@ -303,7 +304,7 @@ function TasksPage() {
                 value={templateId}
                 onChange={(e) => setTemplateId(e.target.value)}
               >
-                {templates.map((t) => (
+                {templates.filter((t) => t.enabled).map((t) => (
                   <option key={t.id} value={t.id}>
                     {t.name}
                   </option>
