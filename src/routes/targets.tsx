@@ -24,15 +24,42 @@ export const Route = createFileRoute("/targets")({
 });
 
 
-type Mode = { kind: "none" } | { kind: "single"; target?: Target | undefined } | { kind: "import" };
+type Mode =
+  | { kind: "none" }
+  | { kind: "single"; target?: Target | undefined }
+  | { kind: "import" }
+  | { kind: "tags"; target: Target };
 
 function TargetsPage() {
-  const { targets, addTarget, updateTarget, removeTarget, importTargets, setTargetsEnabled } =
-    useSmsStore();
+  const {
+    targets,
+    tags,
+    addTarget,
+    updateTarget,
+    removeTarget,
+    importTargets,
+    setTargetsEnabled,
+    setTargetTags,
+    addTagsToTargets,
+    removeTagsFromTargets,
+    tagLabel,
+  } = useSmsStore();
   const [mode, setMode] = useState<Mode>({ kind: "none" });
   const [query, setQuery] = useState("");
   const [enabledFilter, setEnabledFilter] = useState<"all" | "enabled" | "disabled">("all");
+  const [tagFilter, setTagFilter] = useState("all");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  // 单条设置标签抽屉里的临时勾选
+  const [draftTagIds, setDraftTagIds] = useState<string[]>([]);
+  // 批量标签弹窗
+  const [bulkTag, setBulkTag] = useState<{ open: boolean; mode: "add" | "remove"; tagId: string }>({
+    open: false,
+    mode: "add",
+    tagId: "",
+  });
+
+  const groups = tags.filter((t) => t.parentId === null);
+  const tagOptions = groups.flatMap((g) => [g, ...tags.filter((t) => t.parentId === g.id)]);
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -47,10 +74,17 @@ function TargetsPage() {
     return targets.filter((t) => {
       if (enabledFilter === "enabled" && !t.enabled) return false;
       if (enabledFilter === "disabled" && t.enabled) return false;
+      if (tagFilter !== "all") {
+        const wanted = new Set([
+          tagFilter,
+          ...tags.filter((x) => x.parentId === tagFilter).map((x) => x.id),
+        ]);
+        if (!(t.tagIds ?? []).some((id) => wanted.has(id))) return false;
+      }
       if (!q) return true;
       return [t.name, t.phone, t.region].some((v) => v.toLowerCase().includes(q));
     });
-  }, [targets, query, enabledFilter]);
+  }, [targets, query, enabledFilter, tagFilter, tags]);
 
   const { pageItems, props: pageProps } = usePagination(filtered);
 
@@ -332,6 +366,29 @@ function TargetsPage() {
               <option value="disabled">禁用</option>
             </select>
 
+            <select
+              className="field w-36 py-1.5 text-xs"
+              value={tagFilter}
+              onChange={(e) => {
+                setTagFilter(e.target.value);
+                pageProps.onPage(1);
+              }}
+            >
+              <option value="all">全部标签</option>
+              {groups.map((g) => (
+                <optgroup key={g.id} label={g.name}>
+                  <option value={g.id}>{g.name}（含子标签）</option>
+                  {tags
+                    .filter((t) => t.parentId === g.id)
+                    .map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                </optgroup>
+              ))}
+            </select>
+
             <button
               className="btn-ghost px-3 py-1.5 text-xs"
               onClick={() => setMode({ kind: "import" })}
@@ -340,6 +397,13 @@ function TargetsPage() {
             </button>
             <button className="btn-primary px-3 py-1.5 text-xs" onClick={() => openSingle()}>
               <span className="-ml-0.5 text-base leading-none">+</span> 新增目标
+            </button>
+            <button
+              className="btn-ghost px-3 py-1.5 text-xs disabled:opacity-40"
+              disabled={selected.length === 0}
+              onClick={() => setBulkTag({ open: true, mode: "add", tagId: "" })}
+            >
+              批量标签
             </button>
             <button
               className="btn-ghost px-3 py-1.5 text-xs disabled:opacity-40"
@@ -380,6 +444,7 @@ function TargetsPage() {
               <th className="px-3 py-3 font-medium">姓名</th>
               <th className="px-3 py-3 font-medium">手机号</th>
               <th className="px-3 py-3 font-medium">国家 / 地区</th>
+              <th className="px-3 py-3 font-medium">标签</th>
               <th className="px-3 py-3 font-medium">启用状态</th>
               <th className="px-5 py-3 text-right font-medium">操作</th>
             </tr>
@@ -399,6 +464,23 @@ function TargetsPage() {
                 <td className="px-3 py-3 font-medium">{t.name}</td>
                 <td className="px-3 py-3 tabular-nums text-muted-foreground">{t.phone}</td>
                 <td className="px-3 py-3 text-muted-foreground">{t.region}</td>
+                <td className="max-w-64 px-3 py-3">
+                  {(t.tagIds ?? []).length === 0 ? (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  ) : (
+                    <div className="flex flex-wrap gap-1">
+                      {(t.tagIds ?? []).map((id) => (
+                        <span
+                          key={id}
+                          className="rounded-md bg-accent px-2 py-0.5 text-[11px] font-medium text-accent-foreground"
+                          title={tagLabel(id)}
+                        >
+                          {tagLabel(id).split(" / ").pop()}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </td>
                 <td className="px-3 py-3">
                   {t.enabled ? (
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary">
@@ -420,6 +502,15 @@ function TargetsPage() {
                     >
                       {t.enabled ? "禁用" : "启用"}
                     </button>
+                    <button
+                      className="btn-ghost px-3 py-1.5 text-xs"
+                      onClick={() => {
+                        setDraftTagIds(t.tagIds ?? []);
+                        setMode({ kind: "tags", target: t });
+                      }}
+                    >
+                      设置标签
+                    </button>
                     <button className="btn-ghost px-3 py-1.5 text-xs" onClick={() => openSingle(t)}>
                       编辑
                     </button>
@@ -435,7 +526,7 @@ function TargetsPage() {
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-5 py-12 text-center text-sm text-muted-foreground">
+                <td colSpan={7} className="px-5 py-12 text-center text-sm text-muted-foreground">
                   暂无匹配的目标，可调整筛选或新增/批量导入名单
                 </td>
               </tr>
