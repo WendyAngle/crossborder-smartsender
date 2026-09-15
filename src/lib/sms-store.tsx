@@ -8,17 +8,28 @@ import {
   type ReactNode,
 } from "react";
 
+/** 目标标签：两级结构，parentId 为 null 时是分组标签，否则是其子标签 */
+export type Tag = {
+  id: string;
+  name: string;
+  parentId: string | null;
+};
+
 export type Target = {
   id: string;
   name: string;
   phone: string;
   region: string;
+  /** 所属标签 id 列表（可同时挂多个标签） */
+  tagIds: string[];
   /** 启用状态：禁用后不可被新任务选中，导入/新增默认启用 */
   enabled: boolean;
 };
 
 /** 新增/导入/编辑目标时的输入（启用状态由系统维护） */
-export type TargetInput = Omit<Target, "id" | "enabled">;
+export type TargetInput = Omit<Target, "id" | "enabled" | "tagIds"> & {
+  tagIds?: string[] | undefined;
+};
 
 
 export type Template = {
@@ -232,37 +243,166 @@ export function formatTime(value: string | null) {
   return `${p(d.getUTCMonth() + 1)}-${p(d.getUTCDate())} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}`;
 }
 
+const initialTags: Tag[] = [
+  { id: "g1", name: "客户等级", parentId: null },
+  { id: "g1a", name: "高价值客户", parentId: "g1" },
+  { id: "g1b", name: "潜在客户", parentId: "g1" },
+  { id: "g1c", name: "沉睡客户", parentId: "g1" },
+  { id: "g2", name: "行业", parentId: null },
+  { id: "g2a", name: "3C 电子", parentId: "g2" },
+  { id: "g2b", name: "家居家装", parentId: "g2" },
+  { id: "g2c", name: "服饰美妆", parentId: "g2" },
+  { id: "g3", name: "名单来源", parentId: null },
+  { id: "g3a", name: "展会名单", parentId: "g3" },
+  { id: "g3b", name: "官网注册", parentId: "g3" },
+  { id: "g3c", name: "老客推荐", parentId: "g3" },
+];
+
 const initialTargets: Target[] = [
-  { id: "t1", name: "Sophia Miller", phone: "+1 305 555 0182", region: "美国", enabled: true },
-  { id: "t2", name: "Carlos Mendez", phone: "+34 600 555 019", region: "西班牙", enabled: true },
-  { id: "t3", name: "Emma Wilson", phone: "+44 7700 555 014", region: "英国", enabled: true },
-  { id: "t4", name: "Ahmed Hassan", phone: "+971 50 555 0121", region: "阿联酋", enabled: true },
-  { id: "t5", name: "李静", phone: "+86 138 0000 0777", region: "中国", enabled: true },
-  { id: "t6", name: "Hans Müller", phone: "+49 170 555 0234", region: "德国", enabled: true },
-  { id: "t7", name: "Marie Dubois", phone: "+33 6 55 50 12 34", region: "法国", enabled: true },
-  { id: "t8", name: "Luca Rossi", phone: "+39 333 555 0456", region: "意大利", enabled: false },
-  { id: "t9", name: "Yuki Tanaka", phone: "+81 90 5550 0789", region: "日本", enabled: true },
-  { id: "t10", name: "Kim Min-jun", phone: "+82 10 5550 0567", region: "韩国", enabled: true },
-  { id: "t11", name: "Raj Patel", phone: "+91 98765 43210", region: "印度", enabled: true },
-  { id: "t12", name: "Olivia Smith", phone: "+61 412 555 098", region: "澳大利亚", enabled: true },
+  {
+    id: "t1",
+    name: "Sophia Miller",
+    phone: "+1 305 555 0182",
+    region: "美国",
+    tagIds: ["g1a", "g2a", "g3b"],
+    enabled: true,
+  },
+  {
+    id: "t2",
+    name: "Carlos Mendez",
+    phone: "+34 600 555 019",
+    region: "西班牙",
+    tagIds: ["g1b", "g2c", "g3a"],
+    enabled: true,
+  },
+  {
+    id: "t3",
+    name: "Emma Wilson",
+    phone: "+44 7700 555 014",
+    region: "英国",
+    tagIds: ["g1a", "g2b"],
+    enabled: true,
+  },
+  {
+    id: "t4",
+    name: "Ahmed Hassan",
+    phone: "+971 50 555 0121",
+    region: "阿联酋",
+    tagIds: ["g1b", "g3a"],
+    enabled: true,
+  },
+  {
+    id: "t5",
+    name: "李静",
+    phone: "+86 138 0000 0777",
+    region: "中国",
+    tagIds: ["g1a", "g3c"],
+    enabled: true,
+  },
+  {
+    id: "t6",
+    name: "Hans Müller",
+    phone: "+49 170 555 0234",
+    region: "德国",
+    tagIds: ["g1a", "g2a"],
+    enabled: true,
+  },
+  {
+    id: "t7",
+    name: "Marie Dubois",
+    phone: "+33 6 55 50 12 34",
+    region: "法国",
+    tagIds: ["g2c", "g3b"],
+    enabled: true,
+  },
+  {
+    id: "t8",
+    name: "Luca Rossi",
+    phone: "+39 333 555 0456",
+    region: "意大利",
+    tagIds: ["g1c"],
+    enabled: false,
+  },
+  {
+    id: "t9",
+    name: "Yuki Tanaka",
+    phone: "+81 90 5550 0789",
+    region: "日本",
+    tagIds: ["g1a", "g2a", "g3c"],
+    enabled: true,
+  },
+  {
+    id: "t10",
+    name: "Kim Min-jun",
+    phone: "+82 10 5550 0567",
+    region: "韩国",
+    tagIds: ["g1b", "g2c"],
+    enabled: true,
+  },
+  {
+    id: "t11",
+    name: "Raj Patel",
+    phone: "+91 98765 43210",
+    region: "印度",
+    tagIds: ["g1b", "g3a"],
+    enabled: true,
+  },
+  {
+    id: "t12",
+    name: "Olivia Smith",
+    phone: "+61 412 555 098",
+    region: "澳大利亚",
+    tagIds: ["g1a", "g2b", "g3b"],
+    enabled: true,
+  },
   {
     id: "t13",
     name: "Siti Binti Abdullah",
     phone: "+60 12 555 0678",
     region: "马来西亚",
+    tagIds: ["g1b"],
     enabled: true,
   },
-  { id: "t14", name: "Nguyen Van An", phone: "+84 98 555 0321", region: "越南", enabled: false },
-  { id: "t15", name: "王伟", phone: "+86 139 0000 0888", region: "中国", enabled: true },
-  { id: "t16", name: "Chen Wei Ling", phone: "+65 9123 4567", region: "新加坡", enabled: true },
+  {
+    id: "t14",
+    name: "Nguyen Van An",
+    phone: "+84 98 555 0321",
+    region: "越南",
+    tagIds: ["g1c", "g3a"],
+    enabled: false,
+  },
+  {
+    id: "t15",
+    name: "王伟",
+    phone: "+86 139 0000 0888",
+    region: "中国",
+    tagIds: ["g2b", "g3c"],
+    enabled: true,
+  },
+  {
+    id: "t16",
+    name: "Chen Wei Ling",
+    phone: "+65 9123 4567",
+    region: "新加坡",
+    tagIds: ["g1a", "g2a"],
+    enabled: true,
+  },
   {
     id: "t17",
     name: "Anastasia Ivanova",
     phone: "+7 915 555 0456",
     region: "俄罗斯",
+    tagIds: ["g1c", "g2c"],
     enabled: true,
   },
-  { id: "t18", name: "Pedro Almeida", phone: "+55 11 95550 1234", region: "巴西", enabled: true },
+  {
+    id: "t18",
+    name: "Pedro Almeida",
+    phone: "+55 11 95550 1234",
+    region: "巴西",
+    tagIds: ["g1b", "g3b"],
+    enabled: true,
+  },
 ];
 
 
@@ -706,6 +846,7 @@ type State = {
   templates: Template[];
   tasks: Task[];
   records: SmsRecord[];
+  tags: Tag[];
 };
 
 type Store = State & {
@@ -715,6 +856,23 @@ type Store = State & {
   removeTarget: (id: string) => void;
   /** 批量启用 / 禁用目标 */
   setTargetsEnabled: (ids: string[], enabled: boolean) => void;
+
+  /** 新增标签（parentId 为 null 时新增分组标签，否则新增其子标签） */
+  addTag: (name: string, parentId: string | null) => void;
+  /** 重命名标签 */
+  updateTag: (id: string, name: string) => void;
+  /** 删除标签：分组标签会连带删除子标签，并从所有目标上解绑 */
+  removeTag: (id: string) => void;
+  /** 覆盖式设置单个/多个目标的标签 */
+  setTargetTags: (targetIds: string[], tagIds: string[]) => void;
+  /** 批量为目标添加标签（保留原有标签） */
+  addTagsToTargets: (targetIds: string[], tagIds: string[]) => void;
+  /** 批量从目标上移除标签（其他标签保持不变） */
+  removeTagsFromTargets: (targetIds: string[], tagIds: string[]) => void;
+  /** 标签完整名称：子标签显示为「分组 / 子标签」 */
+  tagLabel: (id: string) => string;
+  tagById: (id: string) => Tag | undefined;
+
 
   addTemplate: (t: TemplateInput) => void;
   updateTemplate: (id: string, t: TemplateInput) => void;
@@ -749,7 +907,7 @@ type Store = State & {
 export type ImportResult = { added: number; invalid: number; duplicated: number };
 
 const StoreContext = createContext<Store | null>(null);
-const KEY = "sms-console-state-v10";
+const KEY = "sms-console-state-v11";
 
 export const REACH_LABEL: Record<ReachStatus, string> = {
   untouched: "未触达",
@@ -842,6 +1000,7 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
     templates: initialTemplates,
     tasks: initialTasks,
     records: initialRecords,
+    tags: initialTags,
   });
 
   useEffect(() => {
@@ -865,7 +1024,10 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
     if (!isValidTargetRow(t)) return false;
     setState((s) => ({
       ...s,
-      targets: [{ id: uid(), ...t, phone: t.phone.trim(), enabled: true }, ...s.targets],
+      targets: [
+        { id: uid(), ...t, phone: t.phone.trim(), tagIds: t.tagIds ?? [], enabled: true },
+        ...s.targets,
+      ],
     }));
     return true;
   }, []);
@@ -886,7 +1048,13 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
           continue;
         }
         seen.add(key);
-        accepted.push({ id: uid(), ...r, phone: r.phone.trim(), enabled: true });
+        accepted.push({
+          id: uid(),
+          ...r,
+          phone: r.phone.trim(),
+          tagIds: r.tagIds ?? [],
+          enabled: true,
+        });
       }
       result.added = accepted.length;
       if (accepted.length === 0) return s;
@@ -900,7 +1068,9 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
     setState((s) => ({
       ...s,
       targets: s.targets.map((x) =>
-        x.id === id ? { ...x, ...t, id, phone: t.phone.trim() } : x,
+        x.id === id
+          ? { ...x, ...t, id, phone: t.phone.trim(), tagIds: t.tagIds ?? x.tagIds ?? [] }
+          : x,
       ),
     }));
     return true;
@@ -917,6 +1087,65 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
       targets: s.targets.map((x) => (set.has(x.id) ? { ...x, enabled } : x)),
     }));
   }, []);
+
+  const addTag = useCallback((name: string, parentId: string | null) => {
+    const clean = name.trim();
+    if (!clean) return;
+    setState((s) => ({ ...s, tags: [...s.tags, { id: uid(), name: clean, parentId }] }));
+  }, []);
+
+  const updateTag = useCallback((id: string, name: string) => {
+    const clean = name.trim();
+    if (!clean) return;
+    setState((s) => ({
+      ...s,
+      tags: s.tags.map((t) => (t.id === id ? { ...t, name: clean } : t)),
+    }));
+  }, []);
+
+  const removeTag = useCallback((id: string) => {
+    setState((s) => {
+      const removing = new Set([id, ...s.tags.filter((t) => t.parentId === id).map((t) => t.id)]);
+      return {
+        ...s,
+        tags: s.tags.filter((t) => !removing.has(t.id)),
+        targets: s.targets.map((x) => ({
+          ...x,
+          tagIds: (x.tagIds ?? []).filter((tid) => !removing.has(tid)),
+        })),
+      };
+    });
+  }, []);
+
+  const setTargetTags = useCallback((targetIds: string[], tagIds: string[]) => {
+    const set = new Set(targetIds);
+    setState((s) => ({
+      ...s,
+      targets: s.targets.map((x) => (set.has(x.id) ? { ...x, tagIds: [...tagIds] } : x)),
+    }));
+  }, []);
+
+  const addTagsToTargets = useCallback((targetIds: string[], tagIds: string[]) => {
+    const set = new Set(targetIds);
+    setState((s) => ({
+      ...s,
+      targets: s.targets.map((x) =>
+        set.has(x.id) ? { ...x, tagIds: [...new Set([...(x.tagIds ?? []), ...tagIds])] } : x,
+      ),
+    }));
+  }, []);
+
+  const removeTagsFromTargets = useCallback((targetIds: string[], tagIds: string[]) => {
+    const set = new Set(targetIds);
+    const drop = new Set(tagIds);
+    setState((s) => ({
+      ...s,
+      targets: s.targets.map((x) =>
+        set.has(x.id) ? { ...x, tagIds: (x.tagIds ?? []).filter((t) => !drop.has(t)) } : x,
+      ),
+    }));
+  }, []);
+
 
 
   const addTemplate = useCallback((t: TemplateInput) => {
@@ -1056,6 +1285,19 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
       updateTarget,
       removeTarget,
       setTargetsEnabled,
+      addTag,
+      updateTag,
+      removeTag,
+      setTargetTags,
+      addTagsToTargets,
+      removeTagsFromTargets,
+      tagById: (id) => state.tags.find((t) => t.id === id),
+      tagLabel: (id) => {
+        const tag = state.tags.find((t) => t.id === id);
+        if (!tag) return "";
+        const parent = tag.parentId ? state.tags.find((p) => p.id === tag.parentId) : undefined;
+        return parent ? `${parent.name} / ${tag.name}` : tag.name;
+      },
       addTemplate,
       updateTemplate,
       removeTemplate,
@@ -1081,6 +1323,12 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
       updateTarget,
       removeTarget,
       setTargetsEnabled,
+      addTag,
+      updateTag,
+      removeTag,
+      setTargetTags,
+      addTagsToTargets,
+      removeTagsFromTargets,
       addTemplate,
       updateTemplate,
       removeTemplate,

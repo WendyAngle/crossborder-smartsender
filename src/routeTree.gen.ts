@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LeadsRouteImport } from './routes/leads'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as TagsRouteImport } from './routes/tags'
 import { Route as TargetsRouteImport } from './routes/targets'
 import { Route as TaskRouteImport } from './routes/task'
 import { Route as TemplatesRouteImport } from './routes/templates'
@@ -30,6 +31,11 @@ const LeadsRoute = LeadsRouteImport.update({
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TagsRoute = TagsRouteImport.update({
+  id: '/tags',
+  path: '/tags',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TargetsRoute = TargetsRouteImport.update({
@@ -57,6 +63,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/leads': typeof LeadsRoute
   '/profile': typeof ProfileRoute
+  '/tags': typeof TagsRoute
   '/targets': typeof TargetsRoute
   '/task': typeof TaskRoute
   '/templates': typeof TemplatesRoute
@@ -66,6 +73,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/leads': typeof LeadsRoute
   '/profile': typeof ProfileRoute
+  '/tags': typeof TagsRoute
   '/targets': typeof TargetsRoute
   '/task': typeof TaskRoute
   '/templates': typeof TemplatesRoute
@@ -76,6 +84,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/leads': typeof LeadsRoute
   '/profile': typeof ProfileRoute
+  '/tags': typeof TagsRoute
   '/targets': typeof TargetsRoute
   '/task': typeof TaskRoute
   '/templates': typeof TemplatesRoute
@@ -87,6 +96,7 @@ export interface FileRouteTypes {
     | '/'
     | '/leads'
     | '/profile'
+    | '/tags'
     | '/targets'
     | '/task'
     | '/templates'
@@ -96,6 +106,7 @@ export interface FileRouteTypes {
     | '/'
     | '/leads'
     | '/profile'
+    | '/tags'
     | '/targets'
     | '/task'
     | '/templates'
@@ -105,6 +116,7 @@ export interface FileRouteTypes {
     | '/'
     | '/leads'
     | '/profile'
+    | '/tags'
     | '/targets'
     | '/task'
     | '/templates'
@@ -115,6 +127,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LeadsRoute: typeof LeadsRoute
   ProfileRoute: typeof ProfileRoute
+  TagsRoute: typeof TagsRoute
   TargetsRoute: typeof TargetsRoute
   TaskRoute: typeof TaskRoute
   TemplatesRoute: typeof TemplatesRoute
@@ -142,6 +155,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tags': {
+      id: '/tags'
+      path: '/tags'
+      fullPath: '/tags'
+      preLoaderRoute: typeof TagsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/targets': {
@@ -179,6 +199,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LeadsRoute: LeadsRoute,
   ProfileRoute: ProfileRoute,
+  TagsRoute: TagsRoute,
   TargetsRoute: TargetsRoute,
   TaskRoute: TaskRoute,
   TemplatesRoute: TemplatesRoute,
