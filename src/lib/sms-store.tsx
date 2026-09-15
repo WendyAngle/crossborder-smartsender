@@ -22,7 +22,7 @@ export type Target = {
   region: string;
   /** 所属标签 id 列表（可同时挂多个标签） */
   tagIds: string[];
-  /** 启用状态：禁用后不可被新任务选中，导入/新增默认启用 */
+  /** 启用状态：禁用后不可被新任务选中，导入/新增默认禁用，需手动启用后才可参与发送 */
   enabled: boolean;
 };
 
@@ -1025,7 +1025,7 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
     setState((s) => ({
       ...s,
       targets: [
-        { id: uid(), ...t, phone: t.phone.trim(), tagIds: t.tagIds ?? [], enabled: true },
+        { id: uid(), ...t, phone: t.phone.trim(), tagIds: t.tagIds ?? [], enabled: false },
         ...s.targets,
       ],
     }));
@@ -1053,7 +1053,7 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
           ...r,
           phone: r.phone.trim(),
           tagIds: r.tagIds ?? [],
-          enabled: true,
+          enabled: false,
         });
       }
       result.added = accepted.length;
