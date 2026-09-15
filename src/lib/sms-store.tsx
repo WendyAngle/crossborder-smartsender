@@ -846,6 +846,7 @@ type State = {
   templates: Template[];
   tasks: Task[];
   records: SmsRecord[];
+  tags: Tag[];
 };
 
 type Store = State & {
@@ -855,6 +856,23 @@ type Store = State & {
   removeTarget: (id: string) => void;
   /** 批量启用 / 禁用目标 */
   setTargetsEnabled: (ids: string[], enabled: boolean) => void;
+
+  /** 新增标签（parentId 为 null 时新增分组标签，否则新增其子标签） */
+  addTag: (name: string, parentId: string | null) => void;
+  /** 重命名标签 */
+  updateTag: (id: string, name: string) => void;
+  /** 删除标签：分组标签会连带删除子标签，并从所有目标上解绑 */
+  removeTag: (id: string) => void;
+  /** 覆盖式设置单个/多个目标的标签 */
+  setTargetTags: (targetIds: string[], tagIds: string[]) => void;
+  /** 批量为目标添加标签（保留原有标签） */
+  addTagsToTargets: (targetIds: string[], tagIds: string[]) => void;
+  /** 批量从目标上移除标签（其他标签保持不变） */
+  removeTagsFromTargets: (targetIds: string[], tagIds: string[]) => void;
+  /** 标签完整名称：子标签显示为「分组 / 子标签」 */
+  tagLabel: (id: string) => string;
+  tagById: (id: string) => Tag | undefined;
+
 
   addTemplate: (t: TemplateInput) => void;
   updateTemplate: (id: string, t: TemplateInput) => void;
