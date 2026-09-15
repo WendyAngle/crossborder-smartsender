@@ -1285,6 +1285,19 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
       updateTarget,
       removeTarget,
       setTargetsEnabled,
+      addTag,
+      updateTag,
+      removeTag,
+      setTargetTags,
+      addTagsToTargets,
+      removeTagsFromTargets,
+      tagById: (id) => state.tags.find((t) => t.id === id),
+      tagLabel: (id) => {
+        const tag = state.tags.find((t) => t.id === id);
+        if (!tag) return "";
+        const parent = tag.parentId ? state.tags.find((p) => p.id === tag.parentId) : undefined;
+        return parent ? `${parent.name} / ${tag.name}` : tag.name;
+      },
       addTemplate,
       updateTemplate,
       removeTemplate,
@@ -1310,6 +1323,12 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
       updateTarget,
       removeTarget,
       setTargetsEnabled,
+      addTag,
+      updateTag,
+      removeTag,
+      setTargetTags,
+      addTagsToTargets,
+      removeTagsFromTargets,
       addTemplate,
       updateTemplate,
       removeTemplate,
