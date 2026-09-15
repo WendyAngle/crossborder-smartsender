@@ -59,7 +59,6 @@ function TargetsPage() {
   });
 
   const groups = tags.filter((t) => t.parentId === null);
-  const tagOptions = groups.flatMap((g) => [g, ...tags.filter((t) => t.parentId === g.id)]);
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -256,6 +255,67 @@ function TargetsPage() {
                 {formError}
               </p>
             )}
+          </Drawer>
+        ) : mode.kind === "tags" ? (
+          <Drawer
+            title={`设置标签 · ${mode.target.name}`}
+            hint="可多选"
+            onClose={() => setMode({ kind: "none" })}
+            footer={
+              <>
+                <button
+                  className="btn-ghost px-4 py-2.5 text-sm"
+                  onClick={() => setMode({ kind: "none" })}
+                >
+                  取消
+                </button>
+                <button
+                  className="btn-primary flex-1 px-4 py-2.5 text-sm"
+                  onClick={() => {
+                    if (mode.kind !== "tags") return;
+                    setTargetTags([mode.target.id], draftTagIds);
+                    setMode({ kind: "none" });
+                  }}
+                >
+                  保存
+                </button>
+              </>
+            }
+          >
+            {groups.length === 0 && (
+              <p className="text-xs text-muted-foreground">
+                还没有标签，请先到「标签管理」中创建标签。
+              </p>
+            )}
+            {groups.map((g) => (
+              <div key={g.id}>
+                <div className="mb-1.5 text-xs font-medium text-muted-foreground">{g.name}</div>
+                <div className="space-y-1 rounded-lg border border-border bg-background/60 p-2.5">
+                  {[g, ...tags.filter((t) => t.parentId === g.id)].map((t) => (
+                    <label
+                      key={t.id}
+                      className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-card"
+                    >
+                      <input
+                        type="checkbox"
+                        className="size-3.5 accent-[hsl(var(--primary))]"
+                        checked={draftTagIds.includes(t.id)}
+                        onChange={() =>
+                          setDraftTagIds((prev) =>
+                            prev.includes(t.id)
+                              ? prev.filter((x) => x !== t.id)
+                              : [...prev, t.id],
+                          )
+                        }
+                      />
+                      <span className={t.parentId === null ? "font-medium" : "pl-2"}>
+                        {t.parentId === null ? `${t.name}（分组）` : t.name}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            ))}
           </Drawer>
         ) : mode.kind === "import" ? (
           <Drawer
@@ -537,6 +597,89 @@ function TargetsPage() {
 
         <Pagination {...pageProps} />
       </section>
+
+      {bulkTag.open && (
+        <div className="fixed inset-0 z-40 grid place-items-center bg-foreground/25 p-6">
+          <div className="w-full max-w-lg rounded-2xl bg-card p-6 shadow-2xl">
+            <div className="flex items-start gap-3">
+              <h3 className="font-display text-lg font-semibold">
+                批量调整 {selected.length} 个目标的标签
+              </h3>
+              <button
+                className="ml-auto grid size-8 place-items-center rounded-lg text-muted-foreground hover:bg-background"
+                aria-label="关闭"
+                onClick={() => setBulkTag({ open: false, mode: "add", tagId: "" })}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mt-4 grid grid-cols-2 gap-1 rounded-xl bg-background p-1">
+              {(["add", "remove"] as const).map((m) => (
+                <button
+                  key={m}
+                  onClick={() => setBulkTag((s2) => ({ ...s2, mode: m }))}
+                  className={`rounded-lg py-2 text-sm font-medium transition-colors ${
+                    bulkTag.mode === m
+                      ? "bg-card text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {m === "add" ? "添加标签" : "移除标签"}
+                </button>
+              ))}
+            </div>
+
+            <select
+              className="field mt-4"
+              value={bulkTag.tagId}
+              onChange={(e) => setBulkTag((s2) => ({ ...s2, tagId: e.target.value }))}
+            >
+              <option value="">选择要{bulkTag.mode === "add" ? "添加" : "移除"}的标签</option>
+              {groups.map((g) => (
+                <optgroup key={g.id} label={g.name}>
+                  <option value={g.id}>{g.name}（分组标签）</option>
+                  {tags
+                    .filter((t) => t.parentId === g.id)
+                    .map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                </optgroup>
+              ))}
+            </select>
+
+            <p className="mt-3 text-xs text-muted-foreground">
+              {bulkTag.mode === "add"
+                ? "只会添加这个标签，已选目标上的其他标签保持不变。"
+                : "只会移除已选目标上的这个标签，其他标签保持不变。"}
+            </p>
+
+            <div className="mt-6 flex justify-end gap-2">
+              <button
+                className="btn-ghost px-5 py-2.5 text-sm"
+                onClick={() => setBulkTag({ open: false, mode: "add", tagId: "" })}
+              >
+                取 消
+              </button>
+              <button
+                className="btn-primary px-5 py-2.5 text-sm disabled:opacity-40"
+                disabled={!bulkTag.tagId || selected.length === 0}
+                onClick={() => {
+                  if (!bulkTag.tagId) return;
+                  if (bulkTag.mode === "add") addTagsToTargets(selected, [bulkTag.tagId]);
+                  else removeTagsFromTargets(selected, [bulkTag.tagId]);
+                  setBulkTag({ open: false, mode: "add", tagId: "" });
+                  setSelectedIds([]);
+                }}
+              >
+                执 行
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AppShell>
   );
 }
