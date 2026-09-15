@@ -907,7 +907,7 @@ type Store = State & {
 export type ImportResult = { added: number; invalid: number; duplicated: number };
 
 const StoreContext = createContext<Store | null>(null);
-const KEY = "sms-console-state-v10";
+const KEY = "sms-console-state-v11";
 
 export const REACH_LABEL: Record<ReachStatus, string> = {
   untouched: "未触达",
@@ -1000,6 +1000,7 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
     templates: initialTemplates,
     tasks: initialTasks,
     records: initialRecords,
+    tags: initialTags,
   });
 
   useEffect(() => {
@@ -1023,7 +1024,10 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
     if (!isValidTargetRow(t)) return false;
     setState((s) => ({
       ...s,
-      targets: [{ id: uid(), ...t, phone: t.phone.trim(), enabled: true }, ...s.targets],
+      targets: [
+        { id: uid(), ...t, phone: t.phone.trim(), tagIds: t.tagIds ?? [], enabled: true },
+        ...s.targets,
+      ],
     }));
     return true;
   }, []);
@@ -1044,7 +1048,13 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
           continue;
         }
         seen.add(key);
-        accepted.push({ id: uid(), ...r, phone: r.phone.trim(), enabled: true });
+        accepted.push({
+          id: uid(),
+          ...r,
+          phone: r.phone.trim(),
+          tagIds: r.tagIds ?? [],
+          enabled: true,
+        });
       }
       result.added = accepted.length;
       if (accepted.length === 0) return s;
@@ -1058,7 +1068,9 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
     setState((s) => ({
       ...s,
       targets: s.targets.map((x) =>
-        x.id === id ? { ...x, ...t, id, phone: t.phone.trim() } : x,
+        x.id === id
+          ? { ...x, ...t, id, phone: t.phone.trim(), tagIds: t.tagIds ?? x.tagIds ?? [] }
+          : x,
       ),
     }));
     return true;
@@ -1075,6 +1087,65 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
       targets: s.targets.map((x) => (set.has(x.id) ? { ...x, enabled } : x)),
     }));
   }, []);
+
+  const addTag = useCallback((name: string, parentId: string | null) => {
+    const clean = name.trim();
+    if (!clean) return;
+    setState((s) => ({ ...s, tags: [...s.tags, { id: uid(), name: clean, parentId }] }));
+  }, []);
+
+  const updateTag = useCallback((id: string, name: string) => {
+    const clean = name.trim();
+    if (!clean) return;
+    setState((s) => ({
+      ...s,
+      tags: s.tags.map((t) => (t.id === id ? { ...t, name: clean } : t)),
+    }));
+  }, []);
+
+  const removeTag = useCallback((id: string) => {
+    setState((s) => {
+      const removing = new Set([id, ...s.tags.filter((t) => t.parentId === id).map((t) => t.id)]);
+      return {
+        ...s,
+        tags: s.tags.filter((t) => !removing.has(t.id)),
+        targets: s.targets.map((x) => ({
+          ...x,
+          tagIds: (x.tagIds ?? []).filter((tid) => !removing.has(tid)),
+        })),
+      };
+    });
+  }, []);
+
+  const setTargetTags = useCallback((targetIds: string[], tagIds: string[]) => {
+    const set = new Set(targetIds);
+    setState((s) => ({
+      ...s,
+      targets: s.targets.map((x) => (set.has(x.id) ? { ...x, tagIds: [...tagIds] } : x)),
+    }));
+  }, []);
+
+  const addTagsToTargets = useCallback((targetIds: string[], tagIds: string[]) => {
+    const set = new Set(targetIds);
+    setState((s) => ({
+      ...s,
+      targets: s.targets.map((x) =>
+        set.has(x.id) ? { ...x, tagIds: [...new Set([...(x.tagIds ?? []), ...tagIds])] } : x,
+      ),
+    }));
+  }, []);
+
+  const removeTagsFromTargets = useCallback((targetIds: string[], tagIds: string[]) => {
+    const set = new Set(targetIds);
+    const drop = new Set(tagIds);
+    setState((s) => ({
+      ...s,
+      targets: s.targets.map((x) =>
+        set.has(x.id) ? { ...x, tagIds: (x.tagIds ?? []).filter((t) => !drop.has(t)) } : x,
+      ),
+    }));
+  }, []);
+
 
 
   const addTemplate = useCallback((t: TemplateInput) => {
