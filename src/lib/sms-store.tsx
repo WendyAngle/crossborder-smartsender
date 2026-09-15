@@ -8,17 +8,28 @@ import {
   type ReactNode,
 } from "react";
 
+/** 目标标签：两级结构，parentId 为 null 时是分组标签，否则是其子标签 */
+export type Tag = {
+  id: string;
+  name: string;
+  parentId: string | null;
+};
+
 export type Target = {
   id: string;
   name: string;
   phone: string;
   region: string;
+  /** 所属标签 id 列表（可同时挂多个标签） */
+  tagIds: string[];
   /** 启用状态：禁用后不可被新任务选中，导入/新增默认启用 */
   enabled: boolean;
 };
 
 /** 新增/导入/编辑目标时的输入（启用状态由系统维护） */
-export type TargetInput = Omit<Target, "id" | "enabled">;
+export type TargetInput = Omit<Target, "id" | "enabled" | "tagIds"> & {
+  tagIds?: string[] | undefined;
+};
 
 
 export type Template = {
