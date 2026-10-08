@@ -87,5 +87,16 @@ export function makeDemoCards(): CardState {
     const n = c.kind === "euicc" ? (i===2 || i===4 ? 0 : 2) : 1;
     for (let j=0;j<n;j++) plans.push({ id:`plan-${i}-${j}`, cardId:c.id, iccid:`8901260${String(i*10+j+1).padStart(13,"0")}`, phone:`+1202555${String(i*10+j+1).padStart(4,"0")}`, region: "美国", country:"US", carrier:"演示运营商", supplier:"演示套餐资源商", channel:"Local SMS Channel · 演示", phoneSource:"UICC_CNUM", ims:c.online==="online" ? "已注册":"未知", connection:c.online==="online" ? "已连接":"未知", send:true, receive:true, smsc:"已配置", image:true, status: c.kind==="uicc" ? c.status : j===0 ? "enabled":"disabled", active:j===0, note:`套餐 ${j+1}`, tagIds:[], limit:i===9 ? 0 : 40+i, used:i%7, reserved:0, diagnostic:i%2===0 ? "卡片曾未启用":"—", diagnosticAt:i%2===0 ? "2026-10-01T00:13:44.000Z":null, retryAt:null, updatedAt:BASE });
   });
-  return {cards, plans, jobs:[], activationHashes:[]};
+  const jobs: CardJob[] = [
+    { id: "job-demo-2", at: new Date(Date.now() - 4000).toISOString(), type: "批量写卡", items: [
+      { cardId: "card-01", label: "LPA:1$demo.smdp.io$MATCH-1001", state: "成功" },
+      { cardId: "card-06", label: "LPA:1$demo.smdp.io$MATCH-1002", state: "成功" },
+    ] },
+    { id: "job-demo-1", at: new Date(Date.now() - 2 * 60 * 1000).toISOString(), type: "批量写卡", items: [
+      { cardId: "card-01", label: "LPA:1$demo.smdp.io$MATCH-0901", state: "成功" },
+      { cardId: "card-03", label: "LPA:1$demo.smdp.io$MATCH-0902", state: "成功" },
+      { cardId: "card-06", label: "LPA:1$demo.smdp.io$MATCH-0903", state: "失败", reason: "白卡响应超时" },
+    ] },
+  ];
+  return {cards, plans, jobs, activationHashes:[]};
 }

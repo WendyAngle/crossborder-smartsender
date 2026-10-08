@@ -38,7 +38,7 @@ export function WriteCardPanel({onClose}:{onClose:()=>void}) {
     const now=new Date().toISOString();
     const plans:Plan[]=entries.map((e,i)=>({id:crypto.randomUUID(),cardId:assigned[i]??"",iccid:"",phone:null,region:"未知",country:"—",carrier:"未回传",supplier:"未回传",channel:"未回传",phoneSource:"未知",ims:"未知",connection:"未知",send:null,receive:null,smsc:"未知",image:false,status:"disabled",active:false,note:"模拟写入套餐",tagIds:[],limit:null,used:0,reserved:0,diagnostic:"—",diagnosticAt:null,retryAt:null,updatedAt:now}));
     setState(s=>({...s,activationHashes:[...s.activationHashes,...hashes],plans:[...s.plans,...plans],jobs:[{id:crypto.randomUUID(),at:now,type:"批量写卡",items:entries.map((e,i)=>({cardId:assigned[i]??"",label:`条目 ${i+1} · ${e.source}`,state:"成功"}))},...s.jobs]}));
-    setEntries([]);setBulk("");toast.success("写卡任务已提交，请稍后点击写卡任务进度按钮查看进展情况");onClose();
+    setEntries([]);setBulk("");toast.success("写卡任务已提交，请稍后点击写卡进度按钮查看进展情况");onClose();
   }
   return <CardPanel title="批量写卡" onClose={onClose} footer={finished?<Button onClick={onClose}>完成</Button>:<><Button variant="outline" onClick={onClose}>取消</Button>{step>1&&<Button variant="outline" onClick={()=>{setStep(step-1);setError("");}}><ArrowLeft/>上一步</Button>}{step<2?<Button disabled={reading} onClick={()=>{if(!entries.length){setError("请添加激活码");return;}setError("");setStep(step+1);}}>下一步<ArrowRight/></Button>:<Button onClick={submit}>提交写卡</Button>}</>}>
 
