@@ -10,6 +10,7 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuIte
 import { CardPanel, CardField, StatusPill, ErrorNote } from "@/components/cards/card-common";
 import { WriteCardPanel } from "@/components/cards/write-card-panel";
 import { CardSendPanel } from "@/components/cards/card-send-panel";
+import { UiccTable } from "@/components/cards/uicc-table";
 import { usePhoneCards } from "@/lib/phone-card-store";
 import { useSmsStore, formatTime } from "@/lib/sms-store";
 import { onlineLabel, statusLabel, remaining, sendReasons, writeReasons, type PhoneCard, type Plan, type CardKind, type CardStatus } from "@/lib/phone-cards";
