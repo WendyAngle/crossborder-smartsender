@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Check, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export function CopyValue({ value, label, display, fallback = "未回传" }: { value?: string | null; label: string; display?: string; fallback?: string }) {
+export function CopyValue({ value, label, display, fallback = "未回传" }: { value?: string | null | undefined; label: string; display?: string | undefined; fallback?: string }) {
   const [copied, setCopied] = useState(false);
   const [failed, setFailed] = useState(false);
   async function copy() {
