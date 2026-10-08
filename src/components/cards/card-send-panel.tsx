@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { SmsPoster } from "@/components/sms-image";
-import { useSmsStore, templateVariables, renderTemplate, countCredits, isValidPhone, statusLabel as targetStatusLabel, type MsgType } from "@/lib/sms-store";
+import { useSmsStore, templateVariables, renderTemplate, countCredits, isValidPhone, type MsgType } from "@/lib/sms-store";
 import { usePhoneCards } from "@/lib/phone-card-store";
 import { sendReasons, statusLabel } from "@/lib/phone-cards";
 import { CardPanel, CardField, ErrorNote } from "./card-common";
