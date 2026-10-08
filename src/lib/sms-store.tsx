@@ -127,6 +127,9 @@ export type SmsKind = "campaign" | "reply";
 export type SmsRecord = {
   id: string;
   targetId: string;
+  direct?: boolean | undefined;
+  recipientSnapshot?: Target | undefined;
+  followUp?: boolean | undefined;
   /** 所属群发任务；人工回复继承来源记录的任务，历史数据可能为 null */
   taskId: string | null;
   /** 同一目标的一次对话，群发首条与后续人工回复共用同一个 threadId */
@@ -891,6 +894,7 @@ type Store = State & {
   }) => void;
 
   sendReply: (recordId: string, text: string) => void;
+  sendCardSms: (input: { target?: Target | undefined; phone: string; region: string; content: string; msgType: MsgType; followUp: boolean }) => void;
   /** 将会话中对方回复标记为已读 */
   markReplyRead: (recordId: string) => void;
   threadRecords: (threadId: string) => SmsRecord[];
@@ -941,7 +945,7 @@ export function computeReach(targetId: string, records: SmsRecord[]): Reach {
  */
 export function computeTaskStat(task: Task, records: SmsRecord[]): TaskStat {
   const mine = records.filter(
-    (r) => r.taskId === task.id || (r.taskId == null && task.targetIds.includes(r.targetId)),
+    (r) => r.taskId === task.id || (r.taskId == null && !r.direct && task.targetIds.includes(r.targetId)),
   );
   let sending = 0;
   let sent = 0;
@@ -1233,6 +1237,16 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
   );
 
   /** 我方跟进回复：在同一会话内新增一条外发短信记录，不覆盖原记录 */
+  const sendCardSms = useCallback((input: { target?: Target | undefined; phone: string; region: string; content: string; msgType: MsgType; followUp: boolean }) => {
+    if (!isValidPhone(input.phone) || !input.content.trim()) return;
+    const id = uid();
+    const snapshot: Target = input.target ?? { id: `direct-${id}`, name: input.phone, phone: input.phone, region: input.region, enabled: false, tagIds: [] };
+    const now = new Date().toISOString();
+    const record: SmsRecord = { id, targetId: snapshot.id, recipientSnapshot: snapshot, direct: true, followUp: input.followUp, taskId: null, threadId: uid(), kind: "campaign", msgType: input.msgType, seq: 1, status: "sending", content: input.content, contentZh: null, credits: countCredits(input.content,input.followUp), createdAt: now, succeededAt: null, failReason: null, reply: null, replyZh: null, replyAt: null };
+    setState(s=>({...s,records:[record,...s.records]}));
+    setTimeout(()=>setState(s=>({...s,records:s.records.map(r=>r.id===id ? {...r,status:"delivered",succeededAt:new Date().toISOString()} : r)})),1200);
+  }, []);
+
   const sendReply = useCallback((recordId: string, text: string) => {
     setState((s) => {
       const src = s.records.find((r) => r.id === recordId);
@@ -1243,6 +1257,9 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
       const followUp: SmsRecord = {
         id: uid(),
         targetId: src.targetId,
+        direct: src.direct,
+        recipientSnapshot: src.recipientSnapshot,
+        followUp: src.followUp,
         taskId: src.taskId,
         threadId: src.threadId,
         kind: "reply",
@@ -1303,6 +1320,7 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
       removeTemplate,
       setTemplatesEnabled,
       createTask,
+      sendCardSms,
       sendReply,
       markReplyRead,
       threadRecords: (threadId) =>
@@ -1313,7 +1331,7 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
           .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
       taskStatOf: (task) => computeTaskStat(task, state.records),
       reachOf: (targetId) => computeReach(targetId, state.records),
-      targetById: (id) => state.targets.find((t) => t.id === id),
+      targetById: (id) => state.targets.find((t) => t.id === id) ?? state.records.find(r=>r.targetId===id && r.recipientSnapshot)?.recipientSnapshot,
       templateById: (id) => state.templates.find((t) => t.id === id),
     }),
     [
@@ -1334,6 +1352,7 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
       removeTemplate,
       setTemplatesEnabled,
       createTask,
+      sendCardSms,
       sendReply,
       markReplyRead,
     ],
@@ -1352,4 +1371,11 @@ export function autoTaskName() {
   const d = new Date();
   const p = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} · 跨境营销任务`;
+}
+
+// Rebuild providers and consumers together instead of keeping a stale context.
+if (import.meta.hot) {
+  import.meta.hot.accept(() => {
+    import.meta.hot?.invalidate("SMS context changed; reload the complete provider tree");
+  });
 }

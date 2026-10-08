@@ -70,6 +70,7 @@ function LeadsPage() {
   const leads = useMemo<Lead[]>(() => {
     const byThread = new Map<string, SmsRecord[]>();
     for (const r of records) {
+      if (r.direct && r.followUp === false) continue;
       const list = byThread.get(r.threadId) ?? [];
       list.push(r);
       byThread.set(r.threadId, list);

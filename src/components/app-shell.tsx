@@ -54,6 +54,7 @@ const NAV = [
   { to: "/leads", label: "会话跟进" },
   { to: "/", label: "短信明细" },
   { to: "/templates", label: "短信模板" },
+  { to: "/cards", label: "电话卡管理" },
 ] as const;
 
 export function AppShell({
