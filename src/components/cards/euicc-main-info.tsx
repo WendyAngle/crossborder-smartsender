@@ -2,7 +2,7 @@ import type { PhoneCard, Plan } from "@/lib/phone-cards";
 import { onlineLabel } from "@/lib/phone-cards";
 import { CopyValue } from "./copy-value";
 
-export function EuiccMainInfo({ card, activePlan }: { card: PhoneCard; activePlan?: Plan }) {
+export function EuiccMainInfo({ card, activePlan }: { card: PhoneCard; activePlan?: Plan | undefined }) {
   const switching = card.operation ? /switch|切卡|切换/i.test(card.operation) : false;
   const fields = [
     { label: "EID", value: <CopyValue value={card.eid} label="EID" /> },
