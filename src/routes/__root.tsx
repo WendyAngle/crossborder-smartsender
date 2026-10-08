@@ -12,6 +12,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { SmsStoreProvider } from "@/lib/sms-store";
+import { PhoneCardProvider } from "@/lib/phone-card-store";
 
 function NotFoundComponent() {
   return (
@@ -113,8 +114,10 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <SmsStoreProvider>
+        <PhoneCardProvider>
         {/* Required: nested routes render here. */}
         <Outlet />
+        </PhoneCardProvider>
       </SmsStoreProvider>
     </QueryClientProvider>
   );
