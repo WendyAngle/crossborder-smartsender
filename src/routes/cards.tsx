@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { TagFilterSelect } from "@/components/cards/tag-filter-select";
 import { useState } from "react";
-import { MoreHorizontal, Send, Eye, Copy, Layers, Filter, Tag, Edit, Ban, Power, Trash2, Search, RotateCw, AlertCircle } from "lucide-react";
+import { MoreHorizontal, Send, Eye, Copy, Layers, Filter, Tag, Edit, Ban, Power, PencilLine, Trash2, Search, RotateCw, AlertCircle } from "lucide-react";
 import { AppShell, StatCard } from "@/components/app-shell";
 import { Pagination, usePagination } from "@/components/pagination";
 import { Button } from "@/components/ui/button";
