@@ -7,17 +7,14 @@ import { usePhoneCards } from "@/lib/phone-card-store";
 import { activationError, activationFingerprint, autoDistribute, availableCapacity, writeReasons, type Plan } from "@/lib/phone-cards";
 import { CardPanel, CardField, ErrorNote } from "./card-common";
 type Entry={id:string;source:string;code:string;confirmation:string;cardId:string};
-export function WriteCardPanel({selected,onClose}:{selected:string[];onClose:()=>void}) {
+export function WriteCardPanel({onClose}:{onClose:()=>void}) {
   const {state,setState}=usePhoneCards();
-  const [step,setStep]=useState(1); const [ids,setIds]=useState(selected);
+  const [step,setStep]=useState(1);
   const [entries,setEntries]=useState<Entry[]>([]); const [bulk,setBulk]=useState(""); const [error,setError]=useState("");
   const [strategy,setStrategy]=useState("auto"); const [reading,setReading]=useState(false); const fileRef=useRef<HTMLInputElement>(null);
   const [finished,setFinished]=useState(false);
-  if(!selected.length)return <CardPanel title="批量写卡" onClose={onClose} footer={<Button variant="outline" onClick={onClose}>关闭</Button>}><p className="py-8 text-center text-sm text-muted-foreground">请先在白卡列表勾选要写入的启用白卡。</p></CardPanel>;
   const submitting=useRef(false);
-  const candidates=state.cards.filter(c=>c.kind==="euicc");
-  const eligible=candidates.filter(c=>ids.includes(c.id)&&!writeReasons(c,state.plans).length);
-  const excluded=candidates.filter(c=>ids.includes(c.id)&&writeReasons(c,state.plans).length);
+  const eligible=state.cards.filter(c=>c.kind==="euicc"&&!writeReasons(c,state.plans).length);
   const distribution=useMemo(()=>{try{return autoDistribute(eligible.map(c=>({id:c.id,free:availableCapacity(c,state.plans)})),entries.length);}catch{return [];}},[eligible,entries.length,state.plans]);
   const assigned=entries.map((e,i)=>strategy==="auto" ? distribution[i]??"":e.cardId);
   const issues=entries.map((e,i)=>activationError(e.code) ?? (entries.filter(x=>activationFingerprint(x.code)===activationFingerprint(e.code)).length>1 ? "同批激活码重复":null) ?? (!assigned[i] ? "未分配或总容量不足":null));
