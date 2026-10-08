@@ -492,6 +492,39 @@ const initialTemplates: Template[] = [
 ];
 
 
+const initialTemplateVars: TemplateVar[] = [
+  {
+    id: "var1",
+    code: "color",
+    name: "颜色",
+    type: "text",
+    defaultValue: "红色",
+    note: "",
+    enabled: true,
+    updatedAt: "2026-09-23T11:57:31Z",
+  },
+  {
+    id: "var2",
+    code: "price",
+    name: "价格",
+    type: "text",
+    defaultValue: "10",
+    note: "",
+    enabled: true,
+    updatedAt: "2026-09-16T10:16:36Z",
+  },
+  {
+    id: "var3",
+    code: "product_name",
+    name: "产品名称",
+    type: "text",
+    defaultValue: "光模块",
+    note: "",
+    enabled: true,
+    updatedAt: "2026-09-15T14:38:49Z",
+  },
+];
+
 const initialTasks: Task[] = [
   {
     id: "task1",
@@ -1070,12 +1103,17 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
     tasks: initialTasks,
     records: initialRecords,
     tags: initialTags,
+    templateVars: initialTemplateVars,
   });
 
   useEffect(() => {
     try {
       const raw = localStorage.getItem(KEY);
-      if (raw) setState(JSON.parse(raw) as State);
+      if (raw) {
+        const saved = JSON.parse(raw) as State;
+        // 历史缓存没有 templateVars 字段时补默认值
+        setState({ ...saved, templateVars: saved.templateVars ?? initialTemplateVars });
+      }
     } catch {
       /* ignore */
     }
@@ -1237,6 +1275,54 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
     setState((s) => ({
       ...s,
       templates: s.templates.map((x) => (set.has(x.id) ? { ...x, enabled } : x)),
+    }));
+  }, []);
+
+  const addTemplateVar = useCallback((v: TemplateVarInput) => {
+    const err = validateVarInput(v, state.templateVars);
+    if (err) return err;
+    const now = new Date().toISOString();
+    setState((s) => ({
+      ...s,
+      templateVars: [
+        { id: uid(), ...v, code: v.code.trim(), name: v.name.trim(), enabled: true, updatedAt: now },
+        ...s.templateVars,
+      ],
+    }));
+    return null;
+  }, [state.templateVars]);
+
+  const updateTemplateVar = useCallback((id: string, v: TemplateVarInput) => {
+    const err = validateVarInput(v, state.templateVars, id);
+    if (err) return err;
+    const now = new Date().toISOString();
+    setState((s) => ({
+      ...s,
+      templateVars: s.templateVars.map((x) =>
+        x.id === id
+          ? { ...x, name: v.name.trim(), type: v.type, defaultValue: v.defaultValue, note: v.note, updatedAt: now }
+          : x,
+      ),
+    }));
+    return null;
+  }, [state.templateVars]);
+
+  const removeTemplateVar = useCallback((id: string) => {
+    const v = state.templateVars.find((x) => x.id === id);
+    if (!v) return "变量不存在";
+    const usedBy = templatesUsingVar(v.code, state.templates);
+    if (usedBy.length > 0)
+      return `已被 ${usedBy.length} 个模板引用：${usedBy.map((t) => t.name).join("、")}，删除被拒绝，可改为禁用`;
+    setState((s) => ({ ...s, templateVars: s.templateVars.filter((x) => x.id !== id) }));
+    return null;
+  }, [state.templateVars, state.templates]);
+
+  const setTemplateVarEnabled = useCallback((id: string, enabled: boolean) => {
+    setState((s) => ({
+      ...s,
+      templateVars: s.templateVars.map((x) =>
+        x.id === id ? { ...x, enabled, updatedAt: new Date().toISOString() } : x,
+      ),
     }));
   }, []);
 
