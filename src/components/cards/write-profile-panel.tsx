@@ -19,7 +19,8 @@ export function WriteProfilePanel({ cardId, onClose }: { cardId: string; onClose
   const submitting = useRef(false);
 
   if (!card) return null;
-  const reasons = writeReasons(card, state.plans);
+  const target = card;
+  const reasons = writeReasons(target, state.plans);
 
   async function pickFile(list: FileList | null) {
     const file = list?.[0];
@@ -67,7 +68,7 @@ export function WriteProfilePanel({ cardId, onClose }: { cardId: string; onClose
       setError(reasons.join("；"));
       return;
     }
-    if (availableCapacity(card, state.plans) < 1) {
+    if (availableCapacity(target, state.plans) < 1) {
       setError("该白卡可用容量不足，无法写入");
       return;
     }
@@ -80,12 +81,12 @@ export function WriteProfilePanel({ cardId, onClose }: { cardId: string; onClose
       return;
     }
     const now = new Date().toISOString();
-    const plan: Plan = { id: crypto.randomUUID(), cardId: card.id, iccid: "", phone: null, region: "未知", country: "—", carrier: "未回传", supplier: "未回传", channel: "未回传", phoneSource: "未知", ims: "未知", connection: "未知", send: null, receive: null, smsc: "未知", image: false, status: "disabled", active: false, note: "写入套餐", tagIds: [], limit: null, used: 0, reserved: 0, diagnostic: "—", diagnosticAt: null, retryAt: null, updatedAt: now };
+    const plan: Plan = { id: crypto.randomUUID(), cardId: target.id, iccid: "", phone: null, region: "未知", country: "—", carrier: "未回传", supplier: "未回传", channel: "未回传", phoneSource: "未知", ims: "未知", connection: "未知", send: null, receive: null, smsc: "未知", image: false, status: "disabled", active: false, note: "写入套餐", tagIds: [], limit: null, used: 0, reserved: 0, diagnostic: "—", diagnosticAt: null, retryAt: null, updatedAt: now };
     setState((s) => ({
       ...s,
       activationHashes: [...s.activationHashes, hash],
       plans: [...s.plans, plan],
-      jobs: [{ id: crypto.randomUUID(), at: now, type: "写卡", items: [{ cardId: card.id, label: `${card.note} · ${source || "手动输入"}`, state: "成功" }] }, ...s.jobs],
+      jobs: [{ id: crypto.randomUUID(), at: now, type: "写卡", items: [{ cardId: target.id, label: `${target.note} · ${source || "手动输入"}`, state: "成功" }] }, ...s.jobs],
     }));
     setFinished(true);
   }
@@ -108,7 +109,7 @@ export function WriteProfilePanel({ cardId, onClose }: { cardId: string; onClose
       {finished ? (
         <div className="py-12 text-center">
           <h3 className="text-xl font-semibold text-primary">写卡已提交</h3>
-          <p className="mt-3 text-sm text-muted-foreground">新套餐已写入「{card.note}」，默认停用、未生效，可在套餐卡号视图中查看。</p>
+          <p className="mt-3 text-sm text-muted-foreground">新套餐已写入「{target.note}」，默认停用、未生效，可在套餐卡号视图中查看。</p>
         </div>
       ) : (
         <>
