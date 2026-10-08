@@ -1372,3 +1372,10 @@ export function autoTaskName() {
   const p = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} · 跨境营销任务`;
 }
+
+// Rebuild providers and consumers together instead of keeping a stale context.
+if (import.meta.hot) {
+  import.meta.hot.accept(() => {
+    import.meta.hot?.invalidate("SMS context changed; reload the complete provider tree");
+  });
+}
