@@ -13,6 +13,7 @@ export function WriteCardPanel({selected,onClose}:{selected:string[];onClose:()=
   const [entries,setEntries]=useState<Entry[]>([]); const [bulk,setBulk]=useState(""); const [error,setError]=useState("");
   const [strategy,setStrategy]=useState("auto"); const [reading,setReading]=useState(false); const fileRef=useRef<HTMLInputElement>(null);
   const [finished,setFinished]=useState(false);
+  const submitting=useRef(false);
   const candidates=state.cards.filter(c=>c.kind==="euicc");
   const eligible=candidates.filter(c=>ids.includes(c.id)&&!writeReasons(c,state.plans).length);
   const excluded=candidates.filter(c=>ids.includes(c.id)&&writeReasons(c,state.plans).length);
@@ -28,11 +29,13 @@ export function WriteCardPanel({selected,onClose}:{selected:string[];onClose:()=
     }setEntries(prev=>[...prev,...added]);setReading(false);
   }
   async function submit(){
+    if(submitting.current)return;
     setError("");if(!entries.length||issues.some(Boolean)){setError("请修正或移除所有异常条目");return;}
     const counts=new Map<string,number>();assigned.forEach(id=>counts.set(id,(counts.get(id)??0)+1));
     for(const [id,count] of counts){const card=state.cards.find(c=>c.id===id);if(!card||writeReasons(card,state.plans).length||count>availableCapacity(card,state.plans)){setError("卡片状态或容量已变化，请重新分配");return;}}
+    submitting.current=true;
     const hashes=await Promise.all(entries.map(async e=>{const bytes=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(activationFingerprint(e.code)));return Array.from(new Uint8Array(bytes)).map(v=>v.toString(16).padStart(2,"0")).join("");}));
-    if(hashes.some(h=>state.activationHashes.includes(h))){setError("激活码已用于本次会话的模拟安装，不可再次下发");return;}
+    if(hashes.some(h=>state.activationHashes.includes(h))){submitting.current=false;setError("激活码已用于本次会话的模拟安装，不可再次下发");return;}
     const now=new Date().toISOString();
     const plans:Plan[]=entries.map((e,i)=>({id:crypto.randomUUID(),cardId:assigned[i]??"",iccid:"",phone:null,region:"未知",country:"—",carrier:"未回传",supplier:"未回传",channel:"未回传",phoneSource:"未知",ims:"未知",connection:"未知",send:null,receive:null,smsc:"未知",image:false,status:"disabled",active:false,note:"模拟写入套餐",tagIds:[],limit:null,used:0,reserved:0,diagnostic:"—",diagnosticAt:null,retryAt:null,updatedAt:now}));
     setState(s=>({...s,activationHashes:[...s.activationHashes,...hashes],plans:[...s.plans,...plans],jobs:[{id:crypto.randomUUID(),at:now,type:"模拟写卡",items:entries.map((e,i)=>({cardId:assigned[i]??"",label:`条目 ${i+1} · ${e.source}`,state:"成功"}))},...s.jobs]}));
