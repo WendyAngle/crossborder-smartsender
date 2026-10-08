@@ -47,7 +47,7 @@ export function sendReasons(card: PhoneCard, plan?: Plan): string[] {
   if (card.online !== "online") reasons.push("物理卡非在线");
   if (card.busy || card.operation || card.rotation) reasons.push("卡片运行冲突");
   if (!plan) return [...reasons, "没有已确认生效套餐"];
-  if (plan.status !== "enabled") reasons.push(plan.status === "blocked" ? "套餐已封禁" : "套餐未启用");
+  if (card.kind === "euicc" && plan.status !== "enabled") reasons.push(plan.status === "blocked" ? "套餐已封禁" : "套餐未启用");
   if (!plan.active) reasons.push("套餐未生效");
   if (plan.send !== true) reasons.push(plan.send === false ? "不支持发送" : "发送能力待确认");
   if (plan.ims !== "已注册" || plan.connection !== "已连接" || plan.smsc !== "已配置") reasons.push("演示通道未就绪");
