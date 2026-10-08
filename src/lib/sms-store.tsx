@@ -43,6 +43,61 @@ export type Template = {
 /** 新建/编辑模板时的输入（启用状态由系统维护） */
 export type TemplateInput = Omit<Template, "id" | "enabled">;
 
+/** 模板变量数据类型 */
+export type VarType = "text" | "number" | "date" | "link";
+
+export const VAR_TYPE_LABEL: Record<VarType, string> = {
+  text: "文本",
+  number: "数字",
+  date: "日期",
+  link: "链接",
+};
+
+/** 模板变量：公司可复用的业务变量及默认值，模板中通过 {变量编码} 引用 */
+export type TemplateVar = {
+  id: string;
+  /** 变量编码，如 product_name，创建后不可修改 */
+  code: string;
+  /** 显示名称，如 产品名称 */
+  name: string;
+  type: VarType;
+  /** 默认值，最长 1000 字 */
+  defaultValue: string;
+  /** 使用说明，最长 500 字 */
+  note: string;
+  enabled: boolean;
+  updatedAt: string;
+};
+
+/** 新增/编辑变量时的输入（编码创建后不可改，状态由系统维护） */
+export type TemplateVarInput = Pick<TemplateVar, "code" | "name" | "type" | "defaultValue" | "note">;
+
+/** 变量编码校验：字母开头，仅字母 / 数字 / 下划线，2-40 位 */
+export function isValidVarCode(code: string) {
+  return /^[a-zA-Z][a-zA-Z0-9_]{1,39}$/.test(code.trim());
+}
+
+/** 校验变量输入，返回错误文案；通过时返回 null */
+export function validateVarInput(input: TemplateVarInput, existing: TemplateVar[], editingId?: string) {
+  if (!isValidVarCode(input.code)) return "变量编码需以字母开头，仅含字母、数字、下划线，2-40 位";
+  if (existing.some((v) => v.code === input.code.trim() && v.id !== editingId))
+    return "变量编码已存在";
+  if (!input.name.trim()) return "请填写显示名称";
+  if (input.name.trim().length > 60) return "显示名称最长 60 字";
+  if (input.defaultValue.length > 1000) return "默认值最长 1000 字";
+  if (input.note.length > 500) return "使用说明最长 500 字";
+  return null;
+}
+
+/** 模板内容中引用该变量的方式：{变量编码} */
+export const varToken = (code: string) => `{${code}}`;
+
+/** 引用了该变量的模板 */
+export function templatesUsingVar(code: string, templates: Template[]) {
+  const token = varToken(code);
+  return templates.filter((t) => t.content.includes(token));
+}
+
 
 /** 发信内容类型：text = 纯文本短信；image = 由模板内容自动生成的图片短信（MMS） */
 export type MsgType = "text" | "image";
@@ -850,6 +905,7 @@ type State = {
   tasks: Task[];
   records: SmsRecord[];
   tags: Tag[];
+  templateVars: TemplateVar[];
 };
 
 type Store = State & {
@@ -882,6 +938,15 @@ type Store = State & {
   removeTemplate: (id: string) => void;
   /** 批量启用 / 禁用模板 */
   setTemplatesEnabled: (ids: string[], enabled: boolean) => void;
+
+  /** 新增模板变量，返回错误文案或 null */
+  addTemplateVar: (v: TemplateVarInput) => string | null;
+  /** 编辑模板变量（编码不可改），返回错误文案或 null */
+  updateTemplateVar: (id: string, v: TemplateVarInput) => string | null;
+  /** 删除模板变量；被模板引用时拒绝并返回错误文案 */
+  removeTemplateVar: (id: string) => string | null;
+  /** 启用 / 禁用单个模板变量 */
+  setTemplateVarEnabled: (id: string, enabled: boolean) => void;
 
   createTask: (input: {
     name: string;
