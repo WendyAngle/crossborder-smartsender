@@ -1,9 +1,11 @@
-import { createContext } from "react";
+import { createContext, type Context } from "react";
 
 /**
- * 独立的上下文模块：sms-store.tsx 热更新时上下文对象身份保持不变，
- * 避免 Provider 与消费组件在热更新瞬间拿到两份不同的 Context 而白屏。
- * 这里不引用 Store 类型（避免与 sms-store 形成循环引用），
- * 消费处在 useSmsStore 中断言为 Store。
+ * 独立的上下文模块，并缓存在 globalThis 上：
+ * 任何模块热更新或以不同时间戳重新加载时，Provider 与消费组件
+ * 始终拿到同一个 Context 对象，避免"must be used inside SmsStoreProvider"白屏。
  */
-export const StoreContext = createContext<unknown>(null);
+const KEY = "__smsStoreContext__";
+const g = globalThis as unknown as Record<string, Context<unknown> | undefined>;
+
+export const StoreContext: Context<unknown> = g[KEY] ?? (g[KEY] = createContext<unknown>(null));
