@@ -16,6 +16,7 @@ import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as TagsRouteImport } from './routes/tags'
 import { Route as TargetsRouteImport } from './routes/targets'
 import { Route as TaskRouteImport } from './routes/task'
+import { Route as TemplateVariablesRouteImport } from './routes/template-variables'
 import { Route as TemplatesRouteImport } from './routes/templates'
 import { Route as TaskTaskIdRouteImport } from './routes/task_.$taskId'
 
@@ -54,6 +55,11 @@ const TaskRoute = TaskRouteImport.update({
   path: '/task',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TemplateVariablesRoute = TemplateVariablesRouteImport.update({
+  id: '/template-variables',
+  path: '/template-variables',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TemplatesRoute = TemplatesRouteImport.update({
   id: '/templates',
   path: '/templates',
@@ -73,6 +79,7 @@ export interface FileRoutesByFullPath {
   '/tags': typeof TagsRoute
   '/targets': typeof TargetsRoute
   '/task': typeof TaskRoute
+  '/template-variables': typeof TemplateVariablesRoute
   '/templates': typeof TemplatesRoute
   '/task/$taskId': typeof TaskTaskIdRoute
 }
@@ -84,6 +91,7 @@ export interface FileRoutesByTo {
   '/tags': typeof TagsRoute
   '/targets': typeof TargetsRoute
   '/task': typeof TaskRoute
+  '/template-variables': typeof TemplateVariablesRoute
   '/templates': typeof TemplatesRoute
   '/task/$taskId': typeof TaskTaskIdRoute
 }
@@ -96,6 +104,7 @@ export interface FileRoutesById {
   '/tags': typeof TagsRoute
   '/targets': typeof TargetsRoute
   '/task': typeof TaskRoute
+  '/template-variables': typeof TemplateVariablesRoute
   '/templates': typeof TemplatesRoute
   '/task_/$taskId': typeof TaskTaskIdRoute
 }
@@ -109,6 +118,7 @@ export interface FileRouteTypes {
     | '/tags'
     | '/targets'
     | '/task'
+    | '/template-variables'
     | '/templates'
     | '/task/$taskId'
   fileRoutesByTo: FileRoutesByTo
@@ -120,6 +130,7 @@ export interface FileRouteTypes {
     | '/tags'
     | '/targets'
     | '/task'
+    | '/template-variables'
     | '/templates'
     | '/task/$taskId'
   id:
@@ -131,6 +142,7 @@ export interface FileRouteTypes {
     | '/tags'
     | '/targets'
     | '/task'
+    | '/template-variables'
     | '/templates'
     | '/task_/$taskId'
   fileRoutesById: FileRoutesById
@@ -143,6 +155,7 @@ export interface RootRouteChildren {
   TagsRoute: typeof TagsRoute
   TargetsRoute: typeof TargetsRoute
   TaskRoute: typeof TaskRoute
+  TemplateVariablesRoute: typeof TemplateVariablesRoute
   TemplatesRoute: typeof TemplatesRoute
   TaskTaskIdRoute: typeof TaskTaskIdRoute
 }
@@ -198,6 +211,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TaskRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/template-variables': {
+      id: '/template-variables'
+      path: '/template-variables'
+      fullPath: '/template-variables'
+      preLoaderRoute: typeof TemplateVariablesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/templates': {
       id: '/templates'
       path: '/templates'
@@ -223,6 +243,7 @@ const rootRouteChildren: RootRouteChildren = {
   TagsRoute: TagsRoute,
   TargetsRoute: TargetsRoute,
   TaskRoute: TaskRoute,
+  TemplateVariablesRoute: TemplateVariablesRoute,
   TemplatesRoute: TemplatesRoute,
   TaskTaskIdRoute: TaskTaskIdRoute,
 }
