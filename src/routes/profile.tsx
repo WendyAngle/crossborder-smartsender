@@ -5,6 +5,8 @@ import { AppShell } from "@/components/app-shell";
 export const Route = createFileRoute("/profile")({
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
       { title: "个人资料 · 短信营销管理系统" },
       {
         name: "description",

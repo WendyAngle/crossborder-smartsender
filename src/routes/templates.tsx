@@ -13,6 +13,8 @@ import {
 export const Route = createFileRoute("/templates")({
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
       { title: "短信模板 · 短信营销管理系统" },
       {
         name: "description",

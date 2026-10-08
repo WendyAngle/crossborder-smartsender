@@ -10,6 +10,8 @@ import { translateForRegion } from "@/lib/translate.functions";
 export const Route = createFileRoute("/leads")({
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
       { title: "会话跟进 · 短信营销管理系统" },
       {
         name: "description",
