@@ -6,6 +6,8 @@ import { useSmsStore, type Tag } from "@/lib/sms-store";
 export const Route = createFileRoute("/tags")({
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
       { title: "标签管理 · 短信营销管理系统" },
       {
         name: "description",
