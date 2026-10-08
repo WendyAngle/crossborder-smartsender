@@ -1,9 +1,9 @@
 import type { PhoneCard, Plan } from "@/lib/phone-cards";
-import { onlineLabel } from "@/lib/phone-cards";
+import { isCardSwitching, onlineLabel } from "@/lib/phone-cards";
 import { CopyValue } from "./copy-value";
 
 export function EuiccMainInfo({ card, activePlan }: { card: PhoneCard; activePlan?: Plan | undefined }) {
-  const switching = card.operation ? /switch|切卡|切换/i.test(card.operation) : false;
+  const switching = isCardSwitching(card);
   const fields = [
     { label: "EID", value: <CopyValue value={card.eid} label="EID" /> },
     { label: "当前生效档位", value: <CopyValue value={activePlan?.iccid} label="当前生效档位" fallback="没有" /> },

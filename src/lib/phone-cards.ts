@@ -23,6 +23,7 @@ export function syncCard(existing: PhoneCard | undefined, incoming: PhoneCard): 
   return existing ? { ...incoming, status: existing.status, note: existing.note, tagIds: existing.tagIds, firstAt: existing.firstAt } : { ...incoming, status: initialCardStatus(incoming.online) };
 }
 export function setLocalStatus(card: PhoneCard, status: CardStatus): PhoneCard { return { ...card, status }; }
+export function isCardSwitching(card: PhoneCard): boolean { return Boolean(card.operation && /switch|切卡|切换/i.test(card.operation)); }
 export function availableCapacity(card: PhoneCard, plans: Plan[]): number {
   if (card.capacity === null) return 0;
   return Math.max(0, card.capacity - plans.filter(p => p.cardId === card.id).length - card.reserved);
@@ -79,7 +80,7 @@ const BASE = "2026-10-08T03:29:00.000Z";
 export function makeDemoCards(): CardState {
   const cards: PhoneCard[] = Array.from({length: 20}, (_,i) => {
     const online: Online = i%5===3 ? "offline" : i%5===4 ? "unknown" : "online";
-    return { id: `card-${String(i+1).padStart(2,"0")}`, sourceId: `DEMO-${1001+i}`, kind: i<8 ? "euicc" : "uicc", eid: i<8 ? `890490320000000000000000${String(i+1).padStart(8,"0")}` : null, note: i<8 ? `白卡 ${String(i+1).padStart(2,"0")}` : `普通卡 ${String(i-7).padStart(2,"0")}`, device: `矩阵 ${Math.floor(i/4)+1} / 卡槽 ${i%4+1}`, online, busy: i===6, operation: null, rotation: false, capacity: i<8 ? (i===4 ? null : [6,12,4,10,0,8,16,5][i] ?? 6) : 1, reserved: 0, status: initialCardStatus(online), tagIds: [], supplier: "演示资源商", sourceValid: true, firstAt: "2026-10-01T04:00:00.000Z", syncedAt: BASE, updatedAt: BASE };
+    return { id: `card-${String(i+1).padStart(2,"0")}`, sourceId: `DEMO-${1001+i}`, kind: i<8 ? "euicc" : "uicc", eid: i<8 ? `890490320000000000000000${String(i+1).padStart(8,"0")}` : null, note: i<8 ? `白卡 ${String(i+1).padStart(2,"0")}` : `普通卡 ${String(i-7).padStart(2,"0")}`, device: `矩阵 ${Math.floor(i/4)+1} / 卡槽 ${i%4+1}`, online, busy: i===6, operation: i===5 ? "切卡中" : null, rotation: i===1, capacity: i<8 ? (i===4 ? null : [6,12,4,10,0,8,16,5][i] ?? 6) : 1, reserved: 0, status: initialCardStatus(online), tagIds: [], supplier: "演示资源商", sourceValid: true, firstAt: "2026-10-01T04:00:00.000Z", syncedAt: BASE, updatedAt: BASE };
   });
   const plans: Plan[] = [];
   cards.forEach((c,i) => {
