@@ -23,12 +23,13 @@ export const Route = createFileRoute("/cards")({
 });
 type Mode = { kind: "detail" | "edit" | "tags" | "send"; cardId: string; planId?: string } | {kind:"write"; ids:string[]} | {kind:"jobs"} | {kind:"bulkTags"; ids:string[]; plan?:boolean} | {kind:"delete"};
 type Confirm = {title:string;hint:string;run:()=>void};
+type EditDraft={phone:string;supplier:string;channel:string;phoneSource:string;country:string;status:CardStatus;limitMode:"inherit"|"block"|"custom";limit:string;note:string};
 type CardFilters = Partial<Record<"busy" | "capacity" | "source" | "from" | "to" | "country" | "supplier" | "channel" | "phoneSource" | "ims" | "connection" | "smsc" | "send" | "receive", string>>;
 const extendedFields=["资源商","在线与运行","通道与能力","诊断与时间"];
 function CardsPage(){
   const {state,setState}=usePhoneCards();const sms=useSmsStore();const {type,view,card}=Route.useSearch();const navigate=Route.useNavigate();
   const [query,setQuery]=useState("");const [status,setStatus]=useState("all");const [online,setOnline]=useState("all");const [tag,setTag]=useState("all");const [available,setAvailable]=useState("all");const [more,setMore]=useState(false);const [filters,setFilters]=useState<CardFilters>({});const [columns,setColumns]=useState<string[]>([]);
-  const [selected,setSelected]=useState<string[]>([]);const [selectedPlans,setSelectedPlans]=useState<string[]>([]);const [planActive,setPlanActive]=useState("all");const [planCountry,setPlanCountry]=useState("all");const [planSupplier,setPlanSupplier]=useState("all");const [mode,setMode]=useState<Mode|null>(null);const [confirm,setConfirm]=useState<Confirm|null>(null);const [note,setNote]=useState("");const [draftTags,setDraftTags]=useState<string[]>([]);const [tagAction,setTagAction]=useState("add");const [error,setError]=useState("");const [notice,setNotice]=useState("");
+  const [selected,setSelected]=useState<string[]>([]);const [selectedPlans,setSelectedPlans]=useState<string[]>([]);const [planActive,setPlanActive]=useState("all");const [planCountry,setPlanCountry]=useState("all");const [planSupplier,setPlanSupplier]=useState("all");const [mode,setMode]=useState<Mode|null>(null);const [confirm,setConfirm]=useState<Confirm|null>(null);const [note,setNote]=useState("");const [editDraft,setEditDraft]=useState<EditDraft|null>(null);const [draftTags,setDraftTags]=useState<string[]>([]);const [tagAction,setTagAction]=useState("add");const [error,setError]=useState("");const [notice,setNotice]=useState("");
   const cards=state.cards.filter(c=>c.kind===type);
   const activePlan=(id:string)=>state.plans.find(p=>p.cardId===id&&p.active);
   const filtered=cards.filter(c=>{
@@ -65,12 +66,12 @@ function CardsPage(){
   const currentCard=mode&&"cardId" in mode?state.cards.find(c=>c.id===mode.cardId):undefined;
   const currentPlan=mode&&"planId" in mode&&mode.planId?state.plans.find(p=>p.id===mode.planId):undefined;
   function changeFilter(fn:()=>void){fn();setSelected([]);setSelectedPlans([]);pagination.onPage(1);planPagination.onPage(1);}
-  function open(kind:"detail"|"edit"|"tags"|"send",c:PhoneCard,p?:Plan){setError("");setMode({kind,cardId:c.id,...(p?{planId:p.id}:{})});setNote(p?.note??c.note);setDraftTags(p?.tagIds??c.tagIds);}
+  function open(kind:"detail"|"edit"|"tags"|"send",c:PhoneCard,p?:Plan){setError("");setMode({kind,cardId:c.id,...(p?{planId:p.id}:{})});setNote(p?.note??c.note);setDraftTags(p?.tagIds??c.tagIds);if(kind==="edit"){const o=p??(c.kind==="uicc"?activePlan(c.id):undefined)??c;const limit="limit"in o?o.limit:null;setEditDraft({phone:"phone"in o?(o.phone??""):"",supplier:o.supplier??"",channel:"channel"in o?(o.channel??""):"",phoneSource:"phoneSource"in o?(o.phoneSource??""):"",country:"country"in o?(o.country??""):"",status:o.status,limitMode:limit===null?"inherit":limit===0?"block":"custom",limit:limit&&limit>0?String(limit):"",note:o.note});}}
   function manage(ids:string[],next:CardStatus,isPlan=false){
     let skipped=0;setState(s=>({...s,[isPlan?"plans":"cards"]:(isPlan?s.plans:s.cards).map(v=>{if(!ids.includes(v.id))return v;if(v.status==="blocked"&&next==="enabled"){skipped++;return v;}return {...v,status:next,updatedAt:new Date().toISOString()};})}));
     setSelected([]);setNotice(`已更新本系统管理状态${skipped?`，${skipped} 个封禁对象未启用`:""}，卡端在线和生效状态未改变。`);
   }
-  function requestManage(ids:string[],next:CardStatus,isPlan=false){if(next==="enabled"){manage(ids,next,isPlan);return;}setConfirm({title:next==="blocked"?"封禁电话卡":"停用电话卡",hint:`将影响 ${ids.length} 个${isPlan?"套餐卡号":"物理卡"}，阻止本系统新的相关操作，不改变卡端在线状态。`,run:()=>manage(ids,next,isPlan)});}
+  function requestManage(ids:string[],next:CardStatus,isPlan=false){const unit=isPlan?"套餐卡号":"物理卡";const single=ids.length===1?(isPlan?state.plans.find(p=>p.id===ids[0]):state.cards.find(c=>c.id===ids[0])):undefined;const name=single?("iccid"in single&&single.iccid?single.iccid:"sourceId"in single?single.sourceId:single.note):`${ids.length} 个${unit}`;const copy:Record<CardStatus,[string,string]>={enabled:["启用电话卡",`确认启用“${name}”吗？`],disabled:["停用电话卡",`确认停用“${name}”吗？停用后该卡将不会参与调度。`],blocked:["封禁电话卡",`确认封禁“${name}”吗？封禁后调度将不会使用该卡。`]};const [title,hint]=copy[next];setConfirm({title,hint:ids.length>1?`${hint}（共 ${ids.length} 个${unit}，不改变卡端在线状态。）`:hint,run:()=>manage(ids,next,isPlan)});}
   function log(type:string,items:{cardId:string;label:string;state:"成功"|"失败";reason?:string}[]){setState(s=>({...s,jobs:[{id:crypto.randomUUID(),at:new Date().toISOString(),type,items},...s.jobs]}));}
   function switchPlan(c:PhoneCard,p:Plan,active=true){
     if(c.status!=="enabled"||c.online!=="online"||c.busy||c.operation||c.rotation||p.status!=="enabled"){setNotice("请确认白卡与套餐启用、白卡在线空闲且无运行冲突。");return;}
