@@ -17,7 +17,7 @@ export type PhoneCard = {
   firstAt: string; syncedAt: string; updatedAt: string;
 };
 export type CardJob = { id: string; at: string; type: string; items: { cardId: string; label: string; state: "成功" | "失败" | "结果待确认"; reason?: string }[] };
-export type CardState = { cards: PhoneCard[]; plans: Plan[]; jobs: CardJob[] };
+export type CardState = { cards: PhoneCard[]; plans: Plan[]; jobs: CardJob[]; activationHashes: string[] };
 export function initialCardStatus(online?: string | null): CardStatus { return online === "online" ? "enabled" : "disabled"; }
 export function syncCard(existing: PhoneCard | undefined, incoming: PhoneCard): PhoneCard {
   return existing ? { ...incoming, status: existing.status, note: existing.note, tagIds: existing.tagIds, firstAt: existing.firstAt } : { ...incoming, status: initialCardStatus(incoming.online) };
@@ -86,5 +86,5 @@ export function makeDemoCards(): CardState {
     const n = c.kind === "euicc" ? (i===2 || i===4 ? 0 : 2) : 1;
     for (let j=0;j<n;j++) plans.push({ id:`plan-${i}-${j}`, cardId:c.id, iccid:`8901260${String(i*10+j+1).padStart(13,"0")}`, phone:`+1202555${String(i*10+j+1).padStart(4,"0")}`, region: "美国", country:"US", carrier:"演示运营商", supplier:"演示套餐资源商", channel:"Local SMS Channel · 演示", phoneSource:"UICC_CNUM", ims:c.online==="online" ? "已注册":"未知", connection:c.online==="online" ? "已连接":"未知", send:true, receive:true, smsc:"已配置", image:true, status: c.kind==="uicc" ? c.status : j===0 ? "enabled":"disabled", active:j===0, note:`套餐 ${j+1}`, tagIds:[], limit:i===9 ? 0 : 40+i, used:i%7, reserved:0, diagnostic:i%2===0 ? "卡片曾未启用":"—", diagnosticAt:i%2===0 ? "2026-10-01T00:13:44.000Z":null, retryAt:null, updatedAt:BASE });
   });
-  return {cards, plans, jobs:[]};
+  return {cards, plans, jobs:[], activationHashes:[]};
 }

@@ -27,13 +27,15 @@ export function WriteCardPanel({selected,onClose}:{selected:string[];onClose:()=
       try {const bitmap=await createImageBitmap(file); const canvas=document.createElement("canvas"); const ratio=Math.min(1,2400/Math.max(bitmap.width,bitmap.height));canvas.width=Math.round(bitmap.width*ratio);canvas.height=Math.round(bitmap.height*ratio);const ctx=canvas.getContext("2d");if(!ctx)throw Error();ctx.drawImage(bitmap,0,0,canvas.width,canvas.height);bitmap.close();const pixels=ctx.getImageData(0,0,canvas.width,canvas.height);const qr=jsQR(pixels.data,pixels.width,pixels.height);added.push({id:crypto.randomUUID(),source:file.name,code:qr?.data??"",confirmation:"",cardId:""});}catch{added.push({id:crypto.randomUUID(),source:file.name,code:"",confirmation:"",cardId:""});}
     }setEntries(prev=>[...prev,...added]);setReading(false);
   }
-  function submit(){
+  async function submit(){
     setError("");if(!entries.length||issues.some(Boolean)){setError("请修正或移除所有异常条目");return;}
     const counts=new Map<string,number>();assigned.forEach(id=>counts.set(id,(counts.get(id)??0)+1));
     for(const [id,count] of counts){const card=state.cards.find(c=>c.id===id);if(!card||writeReasons(card,state.plans).length||count>availableCapacity(card,state.plans)){setError("卡片状态或容量已变化，请重新分配");return;}}
+    const hashes=await Promise.all(entries.map(async e=>{const bytes=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(activationFingerprint(e.code)));return Array.from(new Uint8Array(bytes)).map(v=>v.toString(16).padStart(2,"0")).join("");}));
+    if(hashes.some(h=>state.activationHashes.includes(h))){setError("激活码已用于本次会话的模拟安装，不可再次下发");return;}
     const now=new Date().toISOString();
     const plans:Plan[]=entries.map((e,i)=>({id:crypto.randomUUID(),cardId:assigned[i]??"",iccid:"",phone:null,region:"未知",country:"—",carrier:"未回传",supplier:"未回传",channel:"未回传",phoneSource:"未知",ims:"未知",connection:"未知",send:null,receive:null,smsc:"未知",image:false,status:"disabled",active:false,note:"模拟写入套餐",tagIds:[],limit:null,used:0,reserved:0,diagnostic:"—",diagnosticAt:null,retryAt:null,updatedAt:now}));
-    setState(s=>({...s,plans:[...s.plans,...plans],jobs:[{id:crypto.randomUUID(),at:now,type:"模拟写卡",items:entries.map((e,i)=>({cardId:assigned[i]??"",label:`条目 ${i+1} · ${e.source}`,state:"成功"}))},...s.jobs]}));
+    setState(s=>({...s,activationHashes:[...s.activationHashes,...hashes],plans:[...s.plans,...plans],jobs:[{id:crypto.randomUUID(),at:now,type:"模拟写卡",items:entries.map((e,i)=>({cardId:assigned[i]??"",label:`条目 ${i+1} · ${e.source}`,state:"成功"}))},...s.jobs]}));
     setEntries([]);setBulk("");setFinished(true);
   }
   return <CardPanel title="批量写卡 · 模拟" onClose={onClose} footer={finished?<Button onClick={onClose}>完成</Button>:<><Button variant="outline" onClick={onClose}>取消</Button>{step>1&&<Button variant="outline" onClick={()=>{setStep(step-1);setError("");}}><ArrowLeft/>上一步</Button>}{step<3?<Button disabled={reading} onClick={()=>{if(step===1&&!eligible.length){setError("请选择至少一张可写入的启用白卡");return;}if(step===2&&!entries.length){setError("请添加激活码");return;}setError("");setStep(step+1);}}>下一步<ArrowRight/></Button>:<Button onClick={submit}>模拟提交 {entries.length} 条</Button>}</>}>

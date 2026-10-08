@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { initialCardStatus, syncCard, setLocalStatus, makeDemoCards, autoDistribute, writeReasons, remaining, activationError } from "./phone-cards";
+import { initialCardStatus, syncCard, setLocalStatus, makeDemoCards, autoDistribute, writeReasons, remaining, activationError, sendReasons } from "./phone-cards";
 describe("电话卡业务规则", () => {
   it("首次同步在线默认启用", () => { expect(initialCardStatus("online")).toBe("enabled"); });
   it("首次同步离线默认停用", () => { expect(initialCardStatus("offline")).toBe("disabled"); });
@@ -12,4 +12,5 @@ describe("电话卡业务规则", () => {
   it("停用卡禁止写入", () => { const s=makeDemoCards(); const c=s.cards[0]; if(!c) throw Error(); expect(writeReasons({...c,status:"disabled"},s.plans)).toContain("白卡未启用或已封禁"); });
   it("日额度预占不重复扣减", () => { const p=makeDemoCards().plans[0]; if(!p) throw Error(); expect(remaining({...p,limit:29,used:5,reserved:2})).toBe(22); expect(remaining({...p,limit:29,used:7,reserved:0})).toBe(22); });
   it("只接受激活码而非任意二维码", () => { expect(activationError("https://example.com")).toBeTruthy(); expect(activationError("LPA:1$demo.example$CaseSensitiveID")).toBeNull(); });
+  it("普通卡启用不受重复套餐开关影响", () => { const s=makeDemoCards(); const c=s.cards.find(c=>c.kind==="uicc"&&c.online==="online"); const p=s.plans.find(p=>p.cardId===c?.id); if(!c||!p)throw Error(); expect(sendReasons(c,{...p,status:"disabled"})).not.toContain("套餐未启用"); });
 });
