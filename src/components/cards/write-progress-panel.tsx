@@ -13,7 +13,7 @@ export function WriteProgressPanel({ onClose }: { onClose: () => void }) {
   const jobs = state.jobs.filter((j) => j.type === "批量写卡");
   const cardName = (id: string) => state.cards.find((c) => c.id === id)?.note ?? "—";
   return (
-    <CardPanel title="写卡任务进度" onClose={onClose} footer={<Button onClick={onClose}>关闭</Button>}>
+    <CardPanel title="写卡进度" onClose={onClose} footer={<Button onClick={onClose}>关闭</Button>}>
       {!jobs.length && <p className="py-12 text-center text-sm text-muted-foreground">暂无写卡任务</p>}
       {jobs.map((job) => {
         const elapsed = now - new Date(job.at).getTime();
