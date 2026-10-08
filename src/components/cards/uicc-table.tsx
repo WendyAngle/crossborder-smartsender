@@ -1,9 +1,10 @@
 import type { ReactNode } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { StatusPill } from "./card-common";
+import { CopyValue } from "./copy-value";
 import { onlineLabel, remaining, sendReasons, type PhoneCard, type Plan } from "@/lib/phone-cards";
 
-const headers = ["手机号 / ICCID", "设备 / 卡槽", "在线 / 占用", "标签", "短信统计（发送 / 已送达 / 失败）", "电话卡资源商", "短信通道服务商", "国家/地区编码", "手机号来源", "IMS 状态", "卡业务通道", "发送能力", "接收能力", "短信服务中心", "管理状态", "是否可用于发送", "不可用原因", "每日上限", "今日使用", "最近未选中原因", "诊断时间", "下次可尝试", "初次入库时间", "最近更新", "最近同步"];
+const headers = ["手机号", "ICCID", "设备 / 卡槽", "在线 / 占用", "标签", "短信统计（发送 / 已送达 / 失败）", "电话卡资源商", "短信通道服务商", "国家/地区编码", "手机号来源", "IMS 状态", "卡业务通道", "发送能力", "接收能力", "短信服务中心", "管理状态", "是否可用于发送", "不可用原因", "每日上限", "今日使用", "最近未选中原因", "诊断时间", "下次可尝试", "初次入库时间", "最近更新", "最近同步"];
 const timestamp = (value: string | null | undefined) => {
   if (!value) return "—";
   const date = new Date(value);
@@ -30,7 +31,8 @@ export function UiccTable({ cards, plans, selected, setSelected, renderTags, act
         const plan = plans.find(p => p.cardId === card.id && p.active);
         const reasons = sendReasons(card, plan);
         const cells: ReactNode[] = [
-          <div className="min-w-48"><p className="font-medium">{plan?.phone ?? "未回传"}</p><p className="mt-1 text-xs text-muted-foreground">{plan?.iccid || "ICCID 未回传"}</p><p className="mt-1 text-xs text-muted-foreground">{card.note}</p></div>,
+          <div className="min-w-40"><CopyValue value={plan?.phone} label="手机号" /><p className="mt-1 text-xs text-muted-foreground">{card.note}</p></div>,
+          <CopyValue value={plan?.iccid} label="ICCID" fallback="ICCID 未回传" />,
           card.device, `${onlineLabel[card.online]} / ${card.busy ? "占用中" : "空闲"}`, renderTags(card.tagIds),
           <span title="短信统计尚未同步">— / — / —</span>,
           plan?.supplier || card.supplier || "未归类", plan?.channel || "未回传", plan?.country || "未知",

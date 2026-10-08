@@ -2,9 +2,10 @@ import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { StatusPill } from "./card-common";
+import { CopyValue } from "./copy-value";
 import { remaining, sendReasons, type PhoneCard, type Plan } from "@/lib/phone-cards";
 
-const headers = ["所属白卡", "生效状态", "手机号 / ICCID", "标签", "短信统计（发送 / 已送达 / 失败）", "套餐资源商", "短信通道服务商", "国家/地区编码", "运营商", "手机号来源", "IMS 状态", "卡业务通道", "发送能力", "接收能力", "短信服务中心", "管理状态", "是否可用于发送", "不可用原因", "每日上限", "今日使用", "最近未选中原因", "诊断时间", "下次可尝试", "最近更新"];
+const headers = ["所属白卡", "生效状态", "手机号", "ICCID", "标签", "短信统计（发送 / 已送达 / 失败）", "套餐资源商", "短信通道服务商", "国家/地区编码", "运营商", "手机号来源", "IMS 状态", "卡业务通道", "发送能力", "接收能力", "短信服务中心", "管理状态", "是否可用于发送", "不可用原因", "每日上限", "今日使用", "最近未选中原因", "诊断时间", "下次可尝试", "最近更新"];
 const timestamp = (value: string | null | undefined) => {
   if (!value) return "—";
   const date = new Date(value);
@@ -15,13 +16,12 @@ function Pill({ value, positive }: { value: string; positive?: boolean }) {
 }
 const capability = (value: boolean | null | undefined) => <Pill value={value === true ? "支持" : value === false ? "不支持" : "未知"} positive={value === true} />;
 
-export function PlanTable({ rows, selected, setSelected, renderTags, actions, onSwitch, onOpenCard }: {
+export function PlanTable({ rows, selected, setSelected, renderTags, actions, onSwitch }: {
   rows: { plan: Plan; card: PhoneCard }[]; selected: string[];
   setSelected: (update: (previous: string[]) => string[]) => void;
   renderTags: (ids: string[]) => ReactNode;
   actions: (card: PhoneCard, plan?: Plan) => ReactNode;
   onSwitch: (card: PhoneCard, plan: Plan, active?: boolean) => void;
-  onOpenCard: (cardId: string) => void;
 }) {
   return <div className="overflow-x-auto" aria-label="套餐卡号列表">
     <table className="w-full border-collapse text-left text-sm">
@@ -33,9 +33,10 @@ export function PlanTable({ rows, selected, setSelected, renderTags, actions, on
       <tbody>{rows.map(({ plan: p, card: c }) => {
         const reasons = sendReasons(c, p);
         const cells: ReactNode[] = [
-          <button className="max-w-48 text-left hover:underline" title={`只看 ${c.note} 的套餐卡号`} onClick={() => onOpenCard(c.id)}>{c.note}<span className="block text-xs text-muted-foreground">{c.eid ? `${c.eid.slice(0, 6)}…${c.eid.slice(-8)}` : c.device}</span></button>,
+          <div className="max-w-48">{c.note}<span className="block text-xs text-muted-foreground" title={c.eid ?? undefined}>{c.eid ? `${c.eid.slice(0, 6)}…${c.eid.slice(-8)}` : c.device}</span></div>,
           p.active ? <span className="inline-flex items-center gap-1 whitespace-nowrap text-primary">生效<Button variant="ghost" size="sm" onClick={() => onSwitch(c, p, false)}>取消生效</Button></span> : <Button variant="ghost" size="sm" onClick={() => onSwitch(c, p)}>设为生效</Button>,
-          <div className="min-w-48"><p className="font-medium">{p.phone ?? "未回传"}</p><p className="mt-1 text-xs text-muted-foreground">{p.iccid || "ICCID 未回传"}</p><p className="mt-1 text-xs text-muted-foreground">{p.note}</p></div>,
+          <div className="min-w-40"><CopyValue value={p.phone} label="手机号" /><p className="mt-1 text-xs text-muted-foreground">{p.note}</p></div>,
+          <CopyValue value={p.iccid} label="ICCID" fallback="ICCID 未回传" />,
           renderTags(p.tagIds),
           <span title="短信统计尚未同步">— / — / —</span>,
           p.supplier || "未归类", p.channel || "未回传", p.country || "未知", p.carrier || "未知",
