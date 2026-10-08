@@ -15,7 +15,7 @@ import { useSmsStore, formatTime } from "@/lib/sms-store";
 import { onlineLabel, statusLabel, remaining, sendReasons, writeReasons, type PhoneCard, type Plan, type CardKind, type CardStatus } from "@/lib/phone-cards";
 
 export const Route = createFileRoute("/cards")({
-  validateSearch: (search: Record<string, unknown>) => ({ type: search.type === "uicc" ? "uicc" as const : "euicc" as const }),
+  validateSearch: (search: Record<string, unknown>) => ({ type: search['type'] === "uicc" ? "uicc" as const : "euicc" as const }),
   head: () => ({ meta: [ { title: "电话卡管理 · 信汇 SMS" }, { name: "description", content: "分层管理 eUICC 白卡、普通 UICC 与套餐号，查看状态、额度和诊断并管理写卡操作。" }, { property: "og:title", content: "电话卡管理 · 信汇 SMS" }, { property: "og:description", content: "eUICC 白卡与普通 UICC 电话卡管理、写入任务及发送诊断。" }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" } ] }),
   component: CardsPage,
 });

@@ -6,7 +6,7 @@ import { useSmsStore, templateVariables, renderTemplate, countCredits, isValidPh
 import { usePhoneCards } from "@/lib/phone-card-store";
 import { sendReasons } from "@/lib/phone-cards";
 import { CardPanel, CardField, ErrorNote } from "./card-common";
-export function CardSendPanel({cardId,planId,onClose}:{cardId:string;planId?:string;onClose:()=>void}) {
+export function CardSendPanel({cardId,planId,onClose}:{cardId:string;planId?:string | undefined;onClose:()=>void}) {
   const {state,setState}=usePhoneCards();const sms=useSmsStore();const [targetId,setTargetId]=useState("");const [phone,setPhone]=useState("");const [region,setRegion]=useState("美国");const [type,setType]=useState<MsgType>("text");const [tplId,setTplId]=useState("");const [text,setText]=useState("");const [vars,setVars]=useState<Record<string,string>>({});const [follow,setFollow]=useState(true);const [error,setError]=useState("");const [done,setDone]=useState(false);
   const card=state.cards.find(c=>c.id===cardId);const plan=state.plans.find(p=>planId?p.id===planId:p.cardId===cardId&&p.active);const target=sms.targets.find(t=>t.id===targetId&&t.enabled);const tpl=sms.templates.find(t=>t.id===tplId&&t.enabled);
   const variables=tpl?templateVariables(tpl.content).filter(v=>v.token!=="{联系人}"||!target):[];

@@ -127,9 +127,9 @@ export type SmsKind = "campaign" | "reply";
 export type SmsRecord = {
   id: string;
   targetId: string;
-  direct?: boolean;
-  recipientSnapshot?: Target;
-  followUp?: boolean;
+  direct?: boolean | undefined;
+  recipientSnapshot?: Target | undefined;
+  followUp?: boolean | undefined;
   /** 所属群发任务；人工回复继承来源记录的任务，历史数据可能为 null */
   taskId: string | null;
   /** 同一目标的一次对话，群发首条与后续人工回复共用同一个 threadId */
@@ -894,7 +894,7 @@ type Store = State & {
   }) => void;
 
   sendReply: (recordId: string, text: string) => void;
-  sendCardSms: (input: { target?: Target; phone: string; region: string; content: string; msgType: MsgType; followUp: boolean }) => void;
+  sendCardSms: (input: { target?: Target | undefined; phone: string; region: string; content: string; msgType: MsgType; followUp: boolean }) => void;
   /** 将会话中对方回复标记为已读 */
   markReplyRead: (recordId: string) => void;
   threadRecords: (threadId: string) => SmsRecord[];
@@ -1237,7 +1237,7 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
   );
 
   /** 我方跟进回复：在同一会话内新增一条外发短信记录，不覆盖原记录 */
-  const sendCardSms = useCallback((input: { target?: Target; phone: string; region: string; content: string; msgType: MsgType; followUp: boolean }) => {
+  const sendCardSms = useCallback((input: { target?: Target | undefined; phone: string; region: string; content: string; msgType: MsgType; followUp: boolean }) => {
     if (!isValidPhone(input.phone) || !input.content.trim()) return;
     const id = uid();
     const snapshot: Target = input.target ?? { id: `direct-${id}`, name: input.phone, phone: input.phone, region: input.region, enabled: false, tagIds: [] };
