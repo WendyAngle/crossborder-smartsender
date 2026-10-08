@@ -14,6 +14,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { SmsStoreProvider } from "@/lib/sms-store";
 import { PhoneCardProvider } from "@/lib/phone-card-store";
+import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
   return (
@@ -118,6 +119,7 @@ function RootComponent() {
         <PhoneCardProvider>
         {/* Required: nested routes render here. */}
         <Outlet />
+        <Toaster />
         </PhoneCardProvider>
       </SmsStoreProvider>
     </QueryClientProvider>
