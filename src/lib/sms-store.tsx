@@ -1520,7 +1520,7 @@ export function SmsStoreProvider({ children }: { children: ReactNode }) {
 }
 
 export function useSmsStore() {
-  const ctx = useContext(StoreContext);
+  const ctx = useContext(StoreContext) as Store | null;
   if (!ctx) throw new Error("useSmsStore must be used inside SmsStoreProvider");
   return ctx;
 }
